@@ -9,200 +9,75 @@ import {
   TrendingUp, 
   ArrowRight, 
   BanknoteIcon, 
-  Bank, 
-  LockIcon
+  Building, 
+  LockIcon,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 
 const Landing: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <PageContainer>
-      {/* Hero Section */}
-      <section className="w-full py-20 md:py-32 px-4">
-        <div className="container mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 gradient-text">
-            Your Secure Decentralized Savings Account
+    <PageContainer noFooter className="bg-teal-900 text-white">
+      <div className="relative min-h-screen flex flex-col items-center justify-center">
+        {/* Language Selector (Top Right) */}
+        <div className="absolute top-4 right-4 flex items-center">
+          <span className="mr-2">English</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+
+        {/* Main Content */}
+        <div className="text-center px-4 z-10">
+          {/* Logo */}
+          <div className="mb-4">
+            <img 
+              src="/lovable-uploads/a6e75e43-8303-45e1-9873-d0a45fffe034.png" 
+              alt="Network Untop Network Logo" 
+              className="w-80 h-auto mx-auto"
+            />
+          </div>
+          
+          {/* Tagline */}
+          <h1 className="text-xl md:text-3xl font-medium mb-16 tracking-wider">
+            SIMPLE, FAST AND SAFE STAKING
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Earn competitive yields on your USDC savings with Network Untop Network's
-            secure staking platform powered by SwellChain and Base.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
             <Button 
-              size="lg" 
-              className="text-lg"
+              size="lg"
               onClick={() => navigate('/auth')}
+              className="bg-teal-500 hover:bg-teal-600 text-white border-none py-6 text-lg w-full"
             >
-              Start Saving <ArrowRight className="ml-2 h-5 w-5" />
+              <LogIn className="mr-2 h-5 w-5" />
+              LOGIN
             </Button>
+            
             <Button 
-              size="lg" 
+              size="lg"
+              onClick={() => navigate('/auth')}
               variant="outline" 
-              className="text-lg"
-              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+              className="bg-transparent border-2 border-blue-400 text-blue-400 hover:bg-blue-400/10 py-6 text-lg w-full"
             >
-              Learn More
-            </Button>
-          </div>
-          
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center p-6 bg-white rounded-xl shadow-sm border">
-              <BadgeDollarSign className="h-12 w-12 text-app-purple mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Save in USDC</h3>
-              <p className="text-gray-600 text-center">
-                Protect your savings from inflation by holding stable USDC with guaranteed returns.
-              </p>
-            </div>
-            
-            <div className="flex flex-col items-center p-6 bg-white rounded-xl shadow-sm border">
-              <TrendingUp className="h-12 w-12 text-app-purple mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Earn Rewards</h3>
-              <p className="text-gray-600 text-center">
-                Stake your USDC to earn competitive yields on SwellChain and Base protocols.
-              </p>
-            </div>
-            
-            <div className="flex flex-col items-center p-6 bg-white rounded-xl shadow-sm border">
-              <Shield className="h-12 w-12 text-app-purple mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Maximum Security</h3>
-              <p className="text-gray-600 text-center">
-                Your funds are secured by industry-leading blockchain protocols and smart contracts.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* Features Section */}
-      <section id="features" className="w-full py-20 bg-gray-50 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center">
-            The Future of <span className="gradient-text">Decentralized Savings</span>
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-            <div>
-              <h3 className="text-2xl font-semibold mb-4">Stake with Confidence</h3>
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <Bank className="h-6 w-6 text-app-purple mr-4 mt-1 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">SwellChain Protocol</h4>
-                    <p className="text-gray-600">
-                      Leverage Ethereum's security with SwellChain's liquid staking solution for maximum returns on your USDC.
-                    </p>
-                  </div>
-                </li>
-                
-                <li className="flex items-start">
-                  <Bank className="h-6 w-6 text-app-blue mr-4 mt-1 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">Base Protocol</h4>
-                    <p className="text-gray-600">
-                      Utilize Coinbase's Base chain for lower fees and institutional-grade security for your USDC savings.
-                    </p>
-                  </div>
-                </li>
-                
-                <li className="flex items-start">
-                  <LockIcon className="h-6 w-6 text-app-purple mr-4 mt-1 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">Flexible Lock Periods</h4>
-                    <p className="text-gray-600">
-                      Choose lock periods of 3, 6, or 12 months to maximize your yield based on your financial goals.
-                    </p>
-                  </div>
-                </li>
-              </ul>
-            </div>
-            
-            <div className="rounded-lg bg-white p-8 shadow-md border">
-              <h3 className="text-2xl font-semibold mb-4">Seamless Fiat Integration</h3>
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <BanknoteIcon className="h-6 w-6 text-app-green mr-4 mt-1 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">Yellow Card Integration</h4>
-                    <p className="text-gray-600">
-                      Easily on-ramp and off-ramp between local African currencies and USDC through Yellow Card's API.
-                    </p>
-                  </div>
-                </li>
-                
-                <li className="flex items-start">
-                  <BanknoteIcon className="h-6 w-6 text-app-blue mr-4 mt-1 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">Coinbase Pay</h4>
-                    <p className="text-gray-600">
-                      Global users can securely purchase USDC directly using Coinbase Pay with their linked accounts.
-                    </p>
-                  </div>
-                </li>
-              </ul>
-              
-              <div className="mt-8">
-                <Button 
-                  onClick={() => navigate('/auth')} 
-                  className="w-full"
-                >
-                  Start Saving Now
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* How It Works Section */}
-      <section className="w-full py-20 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center">
-            How It <span className="gradient-text">Works</span>
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-app-purple text-white flex items-center justify-center mx-auto mb-6">
-                1
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Sign Up</h3>
-              <p className="text-gray-600">
-                Create your account with email authentication through Privy. A secure wallet will be created for you automatically.
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-app-purple text-white flex items-center justify-center mx-auto mb-6">
-                2
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Deposit USDC</h3>
-              <p className="text-gray-600">
-                On-ramp fiat to USDC using Yellow Card or Coinbase Pay, or transfer existing USDC to your wallet.
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-app-purple text-white flex items-center justify-center mx-auto mb-6">
-                3
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Start Staking</h3>
-              <p className="text-gray-600">
-                Choose your preferred protocol (SwellChain or Base) and lock period to start earning rewards on your USDC.
-              </p>
-            </div>
-          </div>
-          
-          <div className="mt-16 text-center">
-            <Button 
-              size="lg" 
-              onClick={() => navigate('/auth')}
-            >
-              Get Started Now
+              <UserPlus className="mr-2 h-5 w-5" />
+              SIGN UP
             </Button>
           </div>
         </div>
-      </section>
+        
+        {/* Background Leaves/Graphics (Optional) */}
+        <div className="absolute left-0 bottom-0 opacity-30 z-0">
+          <svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M150,10 Q200,150 290,150 Q200,250 150,290 Q100,250 10,150 Q100,50 150,10Z" fill="#134e4a" />
+          </svg>
+        </div>
+        <div className="absolute right-0 top-1/4 opacity-30 z-0">
+          <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M100,10 Q150,50 190,100 Q150,150 100,190 Q50,150 10,100 Q50,50 100,10Z" fill="#134e4a" />
+          </svg>
+        </div>
+      </div>
     </PageContainer>
   );
 };
