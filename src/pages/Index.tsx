@@ -1,15 +1,57 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronRight, Wallet } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import Logo from "@/components/Logo";
 import ReturnsCalculator from "@/components/ReturnsCalculator";
+import { toast } from "sonner";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<'login' | 'signup' | 'otp'>('login');
   const [value, setValue] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleContinue = () => {
+    if (currentView === 'login') {
+      // Handle login
+      setIsLoading(true);
+      
+      // Simulate API call
+      setTimeout(() => {
+        setIsLoading(false);
+        toast.success("Login successful");
+        navigate("/dashboard");
+      }, 1500);
+    } else if (currentView === 'signup') {
+      // Move to OTP screen
+      if (!email) {
+        toast.error("Please enter your email address");
+        return;
+      }
+      setCurrentView('otp');
+    } else if (currentView === 'otp') {
+      // Verify OTP and log in
+      if (value.length !== 6) {
+        toast.error("Please enter a valid 6-digit code");
+        return;
+      }
+      
+      setIsLoading(true);
+      
+      // Simulate API call
+      setTimeout(() => {
+        setIsLoading(false);
+        toast.success("Account created successfully");
+        navigate("/dashboard");
+      }, 1500);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-teal-900 to-teal-950 text-white">
@@ -81,6 +123,14 @@ const Index = () => {
                     Click to Resend code
                   </Button>
                 </div>
+                <Button 
+                  className="w-full bg-teal-500 hover:bg-teal-400 h-14 text-lg"
+                  onClick={handleContinue}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Verifying..." : "Verify & Continue"}
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
               </div>
             ) : (
               <div className="space-y-6">
@@ -89,6 +139,8 @@ const Index = () => {
                     type="email" 
                     placeholder="Enter your email" 
                     className="bg-teal-800/30 border-teal-600 text-teal-300 placeholder:text-teal-500 h-14"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
                 
@@ -98,6 +150,8 @@ const Index = () => {
                       type="password" 
                       placeholder="Password" 
                       className="bg-teal-800/30 border-teal-600 text-teal-300 placeholder:text-teal-500 h-14 pr-12"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                     <ChevronRight className="absolute right-4 top-1/2 transform -translate-y-1/2 text-teal-400 h-5 w-5" />
                   </div>
@@ -105,9 +159,10 @@ const Index = () => {
                 
                 <Button 
                   className="w-full bg-teal-500 hover:bg-teal-400 h-14 text-lg"
-                  onClick={() => currentView !== 'login' && setCurrentView('otp')}
+                  onClick={handleContinue}
+                  disabled={isLoading}
                 >
-                  Continue with Email
+                  {isLoading ? "Processing..." : "Continue with Email"}
                   <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
                 
