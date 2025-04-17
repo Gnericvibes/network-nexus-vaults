@@ -9,7 +9,7 @@ import {
   TrendingUp, 
   ArrowRight, 
   BanknoteIcon, 
-  Bank, 
+  Building, 
   LockIcon
 } from 'lucide-react';
 
@@ -86,7 +86,7 @@ const Landing: React.FC = () => {
               <h3 className="text-2xl font-semibold mb-4">Stake with Confidence</h3>
               <ul className="space-y-4">
                 <li className="flex items-start">
-                  <Bank className="h-6 w-6 text-app-purple mr-4 mt-1 flex-shrink-0" />
+                  <Building className="h-6 w-6 text-app-purple mr-4 mt-1 flex-shrink-0" />
                   <div>
                     <h4 className="font-medium">SwellChain Protocol</h4>
                     <p className="text-gray-600">
@@ -96,7 +96,7 @@ const Landing: React.FC = () => {
                 </li>
                 
                 <li className="flex items-start">
-                  <Bank className="h-6 w-6 text-app-blue mr-4 mt-1 flex-shrink-0" />
+                  <Building className="h-6 w-6 text-app-blue mr-4 mt-1 flex-shrink-0" />
                   <div>
                     <h4 className="font-medium">Base Protocol</h4>
                     <p className="text-gray-600">
