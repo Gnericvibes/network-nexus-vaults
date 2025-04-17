@@ -1,55 +1,42 @@
-
 #root {
-  max-width: 100%;
-  margin: 0;
-  padding: 0;
-  text-align: left;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
-/* Remove padding from root */
-#root {
-  padding: 0;
-}
-
-/* Animation for the logo */
-@keyframes float {
-  0% {
-    transform: translateY(0px);
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
   }
-  50% {
-    transform: translateY(-10px);
-  }
-  100% {
-    transform: translateY(0px);
+  to {
+    transform: rotate(360deg);
   }
 }
 
-svg {
-  animation: float 6s ease-in-out infinite;
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
 }
 
-/* Input focus styles */
-input:focus {
-  border-color: #2dd4bf;
-  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.2);
+.card {
+  padding: 2em;
 }
 
-/* Button hover animation */
-button {
-  transition: all 0.2s ease-in-out;
-}
-
-button:hover {
-  transform: translateY(-2px);
+.read-the-docs {
+  color: #888;
 }
