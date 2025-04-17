@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { AuthWalletProvider } from "@/contexts/AuthWalletContext";
 import { ChainProvider } from "@/contexts/ChainContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { TransactionProvider } from "@/contexts/TransactionContext";
@@ -20,13 +19,13 @@ import FiatPage from "./pages/FiatPage";
 import HistoryPage from "./pages/HistoryPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
-import { useAuthWallet } from "./contexts/AuthWalletContext";
+import { useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuthWallet();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -90,17 +89,17 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <AuthWalletProvider>
-          <ChainProvider>
-            <WalletProvider>
-              <TransactionProvider>
+      <AuthProvider>
+        <ChainProvider>
+          <WalletProvider>
+            <TransactionProvider>
+              <BrowserRouter>
                 <AppRoutes />
-              </TransactionProvider>
-            </WalletProvider>
-          </ChainProvider>
-        </AuthWalletProvider>
-      </BrowserRouter>
+              </BrowserRouter>
+            </TransactionProvider>
+          </WalletProvider>
+        </ChainProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
