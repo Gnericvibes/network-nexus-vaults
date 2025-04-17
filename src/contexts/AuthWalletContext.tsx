@@ -5,6 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import WalletConnectProvider from '@walletconnect/web3-provider';
 
+// Import polyfills directly to ensure they're loaded
+import '../polyfills/global.js';
+
 interface AuthWalletContextType {
   user: {
     email: string | null;
@@ -99,22 +102,36 @@ export const AuthWalletProvider: React.FC<{ children: ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Check that polyfills are loaded
-      if (!window.util || !window.util.inherits || !window.Buffer) {
-        console.error("Required polyfills not loaded. Attempting to reload...");
-        // Force reload of polyfills
+      // Verify polyfills are loaded
+      console.log("Checking polyfills before WalletConnect initialization:", {
+        buffer: !!window.Buffer,
+        util: !!window.util,
+        utilInherits: typeof window.util.inherits === 'function',
+        eventEmitter: !!window.EventEmitter
+      });
+      
+      // Force reload polyfills if needed
+      if (!window.util || typeof window.util.inherits !== 'function') {
+        console.error("Required polyfills not loaded properly. Reloading...");
+        // Re-import the polyfills
         await import('../polyfills/global.js');
+        
+        console.log("Polyfills reloaded:", {
+          buffer: !!window.Buffer,
+          util: !!window.util,
+          utilInherits: typeof window.util.inherits === 'function',
+          eventEmitter: !!window.EventEmitter
+        });
       }
       
-      // Create WalletConnect Provider with a fallback mechanism
+      // Create WalletConnect Provider
       let provider;
       try {
-        // Add console logs to track initialization
         console.log("Initializing WalletConnect provider...");
         
         provider = new WalletConnectProvider({
           rpc: {
-            1: "https://eth-mainnet.g.alchemy.com/v2/demo", // Use publicly available endpoint
+            1: "https://eth-mainnet.g.alchemy.com/v2/demo", // Public endpoint
             137: "https://polygon-rpc.com", // Public Polygon endpoint
             8453: "https://mainnet.base.org", // Base
           },

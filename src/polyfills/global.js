@@ -14,8 +14,10 @@ window.process = {
   nextTick: nextTick
 };
 
-// Util polyfill - specifically for util.inherits
+// Explicitly define util before using it
 window.util = window.util || {};
+
+// Define util.inherits as a proper function
 window.util.inherits = function(ctor, superCtor) {
   if (superCtor) {
     ctor.super_ = superCtor;
@@ -23,16 +25,16 @@ window.util.inherits = function(ctor, superCtor) {
   }
 };
 
-// Ensure the util polyfill is accessible globally
-if (typeof global !== 'undefined' && !global.util) {
+// Make sure the util object is available in both window and global
+if (typeof global !== 'undefined') {
   global.util = window.util;
 }
 
 // Add EventEmitter polyfill that might be expected by WalletConnect
-const EventEmitter = function() {
+function EventEmitter() {
   this._events = this._events || {};
   this._maxListeners = this._maxListeners || undefined;
-};
+}
 
 EventEmitter.prototype.addListener = function(type, listener) {
   if (!this._events) this._events = {};
@@ -63,3 +65,11 @@ EventEmitter.prototype.emit = function(type) {
 
 // Make EventEmitter available globally
 window.EventEmitter = EventEmitter;
+
+// Force all the polyfills to be applied immediately
+console.log("Polyfills loaded: Buffer, util.inherits, EventEmitter", {
+  buffer: !!window.Buffer,
+  util: !!window.util,
+  utilInherits: typeof window.util.inherits === 'function',
+  eventEmitter: !!window.EventEmitter
+});
