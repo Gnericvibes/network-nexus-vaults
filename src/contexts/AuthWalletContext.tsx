@@ -99,13 +99,23 @@ export const AuthWalletProvider: React.FC<{ children: ReactNode }> = ({ children
     try {
       setLoading(true);
       
+      // Check that polyfills are loaded
+      if (!window.util || !window.util.inherits || !window.Buffer) {
+        console.error("Required polyfills not loaded. Attempting to reload...");
+        // Force reload of polyfills
+        await import('../polyfills/global.js');
+      }
+      
       // Create WalletConnect Provider with a fallback mechanism
       let provider;
       try {
+        // Add console logs to track initialization
+        console.log("Initializing WalletConnect provider...");
+        
         provider = new WalletConnectProvider({
           rpc: {
-            1: "https://eth-mainnet.alchemyapi.io/v2/your-api-key", // Replace with your key or use a public endpoint
-            137: "https://polygon-mainnet.infura.io/v3/your-api-key", // Polygon
+            1: "https://eth-mainnet.g.alchemy.com/v2/demo", // Use publicly available endpoint
+            137: "https://polygon-rpc.com", // Public Polygon endpoint
             8453: "https://mainnet.base.org", // Base
           },
           qrcodeModalOptions: {
@@ -113,7 +123,9 @@ export const AuthWalletProvider: React.FC<{ children: ReactNode }> = ({ children
           },
         });
         
+        console.log("Provider created, enabling...");
         await provider.enable();
+        console.log("Provider enabled successfully");
       } catch (err) {
         console.error("WalletConnect initialization error:", err);
         toast({
@@ -126,12 +138,16 @@ export const AuthWalletProvider: React.FC<{ children: ReactNode }> = ({ children
       }
 
       // Get account
+      console.log("Requesting accounts...");
       const accounts = await provider.request({ method: 'eth_accounts' });
+      console.log("Accounts received:", accounts);
+      
       if (!accounts || accounts.length === 0) {
         throw new Error("No accounts found. Please check your wallet connection.");
       }
       
       const walletAddress = accounts[0];
+      console.log("Using wallet address:", walletAddress);
 
       // Create a random password for the user
       const password = crypto.randomUUID();
