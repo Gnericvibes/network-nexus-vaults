@@ -1,10 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthWalletProvider } from "@/contexts/AuthWalletContext";
 import { ChainProvider } from "@/contexts/ChainContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { TransactionProvider } from "@/contexts/TransactionContext";
@@ -89,7 +88,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
+      <AuthWalletProvider>
         <ChainProvider>
           <WalletProvider>
             <TransactionProvider>
@@ -99,7 +98,7 @@ const App = () => (
             </TransactionProvider>
           </WalletProvider>
         </ChainProvider>
-      </AuthProvider>
+      </AuthWalletProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

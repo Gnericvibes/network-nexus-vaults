@@ -5,19 +5,20 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { useAuthWallet } from '@/contexts/AuthWalletContext';
 import PageContainer from '@/components/layout/PageContainer';
-import { ArrowLeft, Mail, Shield } from 'lucide-react';
+import { ArrowLeft, Mail, Shield, Wallet } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const Auth: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { loginWithEmail, loginWithWallet } = useAuthWallet();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
@@ -26,20 +27,16 @@ const Auth: React.FC = () => {
         throw new Error('Please enter a valid email address');
       }
       
-      await login(email);
-      
-      toast({
-        title: 'Success',
-        description: 'You have successfully logged in',
-      });
-      
-      navigate('/dashboard');
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to login',
-        variant: 'destructive',
-      });
+      await loginWithEmail(email);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleWalletConnect = async () => {
+    setIsLoading(true);
+    try {
+      await loginWithWallet();
     } finally {
       setIsLoading(false);
     }
@@ -63,7 +60,7 @@ const Auth: React.FC = () => {
               Welcome to Network Untop Network
             </CardTitle>
             <CardDescription className="text-center">
-              Enter your email to sign in or create an account
+              Choose how you'd like to connect
             </CardDescription>
           </CardHeader>
           
@@ -72,8 +69,29 @@ const Auth: React.FC = () => {
               <div className="flex justify-center mb-6">
                 <Shield className="h-12 w-12 text-app-purple" />
               </div>
+
+              {/* Wallet Connect Button */}
+              <Button 
+                className="w-full mb-4"
+                onClick={handleWalletConnect}
+                disabled={isLoading}
+              >
+                <Wallet className="mr-2 h-4 w-4" />
+                Connect Wallet
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with email
+                  </span>
+                </div>
+              </div>
               
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleEmailSubmit} className="mt-4">
                 <div className="space-y-1">
                   <Label htmlFor="email">Email</Label>
                   <div className="relative">
@@ -92,44 +110,12 @@ const Auth: React.FC = () => {
                 
                 <Button
                   type="submit"
-                  className="w-full mt-6"
+                  className="w-full mt-4"
                   disabled={isLoading}
                 >
                   {isLoading ? 'Processing...' : 'Continue with Email'}
                 </Button>
               </form>
-            </div>
-            
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-2">
-              <Button variant="outline" disabled={isLoading}>
-                <svg
-                  className="mr-2 h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 0C5.373 0 0 5.373 0 12C0 18.627 5.373 24 12 24C18.627 24 24 18.627 24 12C24 5.373 18.627 0 12 0ZM12 22C6.477 22 2 17.523 2 12C2 6.477 6.477 2 12 2C17.523 2 22 6.477 22 12C22 17.523 17.523 22 12 22Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M15.195 11H8.804C8.36 11 8 11.337 8 11.752V12.248C8 12.663 8.36 13 8.804 13H15.195C15.639 13 16 12.663 16 12.248V11.752C16 11.337 15.64 11 15.195 11Z"
-                    fill="currentColor"
-                  />
-                </svg>
-                Google
-              </Button>
             </div>
           </CardContent>
           
@@ -143,7 +129,6 @@ const Auth: React.FC = () => {
               <a href="#" className="underline underline-offset-2 hover:text-primary">
                 Privacy Policy
               </a>
-              .
             </div>
           </CardFooter>
         </Card>
