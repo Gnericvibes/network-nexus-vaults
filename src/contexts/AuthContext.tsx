@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface User {
   email: string | null;
@@ -21,44 +22,67 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Simulate loading user from storage
   useEffect(() => {
-    const loadUser = async () => {
+    const checkSession = async () => {
+      setLoading(true);
       try {
-        // In production, this would connect to Privy SDK
-        const storedUser = localStorage.getItem('network-untop-user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        const { data } = await supabase.auth.getSession();
+        
+        if (data.session) {
+          const supabaseUser = data.session.user;
+          
+          // Fetch additional profile data if needed
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', supabaseUser.id)
+            .single();
+
+          setUser({
+            email: supabaseUser.email,
+            wallet: profileData?.wallet_address,
+            isAuthenticated: true
+          });
         }
       } catch (error) {
-        console.error('Failed to load user:', error);
+        console.error('Session check failed:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadUser();
+    checkSession();
+
+    // Set up auth state change listener
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        const supabaseUser = session?.user;
+        setUser({
+          email: supabaseUser?.email ?? null,
+          wallet: null, // You might want to fetch this from profiles
+          isAuthenticated: true
+        });
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  // Mock functions - would be replaced with actual Privy SDK calls
   const login = async (email: string) => {
     setLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Create a mock wallet
-      const wallet = await createWallet();
-      
-      const newUser = {
+      const { error } = await supabase.auth.signInWithOtp({
         email,
-        wallet,
-        isAuthenticated: true
-      };
-      
-      // Save to localStorage (in production, this would be handled by Privy)
-      localStorage.setItem('network-untop-user', JSON.stringify(newUser));
-      setUser(newUser);
+        options: {
+          shouldCreateUser: true
+        }
+      });
+
+      if (error) throw error;
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -70,11 +94,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     setLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Clear user data
-      localStorage.removeItem('network-untop-user');
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);
@@ -85,8 +106,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const createWallet = async (): Promise<string> => {
-    // In production, this would create a wallet via Privy SDK
-    // For now, we'll generate a random Ethereum-like address
+    // In production, this would be handled by wallet provider
     const randomHex = () => Math.floor(Math.random() * 16).toString(16);
     const address = '0x' + Array(40).fill(0).map(() => randomHex()).join('');
     return address;
