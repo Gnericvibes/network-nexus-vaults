@@ -97,47 +97,104 @@ export const AuthWalletProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const loginWithWallet = async () => {
     try {
-      const provider = new WalletConnectProvider({
-        rpc: {
-          1: "https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID", // You should use an env variable for this
-        },
-      });
+      setLoading(true);
+      
+      // Create WalletConnect Provider with a fallback mechanism
+      let provider;
+      try {
+        provider = new WalletConnectProvider({
+          rpc: {
+            1: "https://eth-mainnet.alchemyapi.io/v2/your-api-key", // Replace with your key or use a public endpoint
+            137: "https://polygon-mainnet.infura.io/v3/your-api-key", // Polygon
+            8453: "https://mainnet.base.org", // Base
+          },
+          qrcodeModalOptions: {
+            mobileLinks: ["metamask", "rainbow", "trust"],
+          },
+        });
+        
+        await provider.enable();
+      } catch (err) {
+        console.error("WalletConnect initialization error:", err);
+        toast({
+          title: "Wallet Connection Error",
+          description: "Failed to initialize wallet connection. Please try again.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
-      await provider.enable();
+      // Get account
       const accounts = await provider.request({ method: 'eth_accounts' });
+      if (!accounts || accounts.length === 0) {
+        throw new Error("No accounts found. Please check your wallet connection.");
+      }
+      
       const walletAddress = accounts[0];
 
-      // Create or update user profile with wallet address
-      const { data: existingUser } = await supabase
+      // Create a random password for the user
+      const password = crypto.randomUUID();
+      
+      // Check if a user with this wallet exists
+      const { data: existingWalletUser } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id')
         .eq('wallet_address', walletAddress)
         .single();
 
-      if (!existingUser) {
-        // Create new user with wallet
-        const { error } = await supabase.auth.signUp({
-          email: `${walletAddress}@wallet.user`,
-          password: crypto.randomUUID(),
-        });
-
-        if (error) throw error;
+      if (existingWalletUser) {
+        // User exists, get their email
+        const { data: userData } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', existingWalletUser.id)
+          .single();
+          
+        if (userData?.email) {
+          // Sign in
+          const { error } = await supabase.auth.signInWithPassword({
+            email: userData.email,
+            password: password,
+          });
+          
+          if (error) throw error;
+        }
       } else {
-        // Login existing user
-        setUser({
-          email: existingUser.email,
-          wallet: walletAddress,
-          isAuthenticated: true
+        // Create new user
+        const email = `wallet_${walletAddress.substring(2, 8)}@untopnetwork.com`;
+        
+        const { error, data } = await supabase.auth.signUp({
+          email: email,
+          password: password,
         });
+        
+        if (error) throw error;
+        
+        // Update profile with wallet address
+        if (data.user) {
+          await supabase
+            .from('profiles')
+            .update({ wallet_address: walletAddress })
+            .eq('id', data.user.id);
+        }
       }
 
+      toast({
+        title: "Wallet Connected",
+        description: `Connected with wallet ${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`,
+      });
+      
       navigate('/dashboard');
     } catch (error) {
+      console.error("Wallet login error:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to connect wallet",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
