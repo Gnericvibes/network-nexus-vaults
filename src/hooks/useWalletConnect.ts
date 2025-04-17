@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import WalletConnectProvider from '@walletconnect/web3-provider';
 import { useToast } from '@/hooks/use-toast';
 import '../polyfills/global.js';
@@ -8,12 +8,11 @@ export const useWalletConnect = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const connectWallet = async () => {
-    try {
-      setLoading(true);
-      
-      // Verify polyfills
-      console.log("Checking polyfills before WalletConnect initialization:", {
+  // Ensure polyfills are loaded on mount
+  useEffect(() => {
+    // Force reload polyfills
+    const checkPolyfills = () => {
+      console.log("Checking polyfills availability:", {
         buffer: !!window.Buffer,
         util: !!window.util,
         utilInherits: typeof window.util.inherits === 'function',
@@ -21,10 +20,25 @@ export const useWalletConnect = () => {
       });
       
       if (!window.util || typeof window.util.inherits !== 'function') {
-        console.error("Required polyfills not loaded properly. Reloading...");
+        console.warn("Polyfills not properly loaded, reloading...");
+        import('../polyfills/global.js');
+      }
+    };
+    
+    checkPolyfills();
+  }, []);
+
+  const connectWallet = async () => {
+    try {
+      setLoading(true);
+      
+      // Double-check polyfills before proceeding
+      if (!window.util || typeof window.util.inherits !== 'function') {
+        console.log("Reloading polyfills before wallet connection...");
         await import('../polyfills/global.js');
         
-        console.log("Polyfills reloaded:", {
+        // Verify polyfills again
+        console.log("Polyfills status after reload:", {
           buffer: !!window.Buffer,
           util: !!window.util,
           utilInherits: typeof window.util.inherits === 'function',
@@ -38,7 +52,7 @@ export const useWalletConnect = () => {
         
         provider = new WalletConnectProvider({
           rpc: {
-            1: "https://eth-mainnet.g.alchemy.com/v2/demo",
+            1: "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161", // Public Infura ID
             137: "https://polygon-rpc.com",
             8453: "https://mainnet.base.org",
           },
@@ -64,6 +78,7 @@ export const useWalletConnect = () => {
       
       return accounts[0];
     } catch (error) {
+      console.error("Wallet connection error:", error);
       throw error;
     } finally {
       setLoading(false);

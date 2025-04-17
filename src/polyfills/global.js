@@ -14,30 +14,26 @@ window.process = {
   nextTick: nextTick
 };
 
-// Explicitly define util before using it
+// Define util with proper inherits implementation
 window.util = window.util || {};
 
-// Define util.inherits as a proper function
-window.util.inherits = function(ctor, superCtor) {
+// This is a critical fix - implement util.inherits properly
+window.util.inherits = function inherits(ctor, superCtor) {
   if (superCtor) {
     ctor.super_ = superCtor;
-    Object.setPrototypeOf(ctor.prototype, superCtor.prototype);
+    const tempObj = Object.create(superCtor.prototype);
+    tempObj.constructor = ctor;
+    ctor.prototype = tempObj;
   }
 };
 
-// Make sure the util object is available in both window and global
-if (typeof global !== 'undefined') {
-  global.util = window.util;
-}
-
-// Add EventEmitter polyfill that might be expected by WalletConnect
+// Add EventEmitter polyfill
 function EventEmitter() {
-  this._events = this._events || {};
-  this._maxListeners = this._maxListeners || undefined;
+  this._events = {};
+  this._maxListeners = undefined;
 }
 
 EventEmitter.prototype.addListener = function(type, listener) {
-  if (!this._events) this._events = {};
   if (!this._events[type]) this._events[type] = [];
   this._events[type].push(listener);
   return this;
@@ -46,7 +42,7 @@ EventEmitter.prototype.addListener = function(type, listener) {
 EventEmitter.prototype.on = EventEmitter.prototype.addListener;
 
 EventEmitter.prototype.removeListener = function(type, listener) {
-  if (!this._events || !this._events[type]) return this;
+  if (!this._events[type]) return this;
   const list = this._events[type];
   const position = list.indexOf(listener);
   if (position !== -1) list.splice(position, 1);
@@ -54,7 +50,7 @@ EventEmitter.prototype.removeListener = function(type, listener) {
 };
 
 EventEmitter.prototype.emit = function(type) {
-  if (!this._events || !this._events[type]) return false;
+  if (!this._events[type]) return false;
   const args = Array.prototype.slice.call(arguments, 1);
   const listeners = this._events[type].slice();
   for (let i = 0; i < listeners.length; i++) {
@@ -67,9 +63,10 @@ EventEmitter.prototype.emit = function(type) {
 window.EventEmitter = EventEmitter;
 
 // Force all the polyfills to be applied immediately
-console.log("Polyfills loaded: Buffer, util.inherits, EventEmitter", {
+console.log("Polyfills loaded with enhanced util.inherits implementation", {
   buffer: !!window.Buffer,
   util: !!window.util,
   utilInherits: typeof window.util.inherits === 'function',
   eventEmitter: !!window.EventEmitter
 });
+
