@@ -106,12 +106,21 @@ export const usePrivyAuth = () => {
   return context;
 };
 
+// Updated to use the environmentally set PRIVY_APP_ID correctly
 export const PrivyAuthConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // This now refers to the secret you've set in Supabase
   const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID;
   
   if (!PRIVY_APP_ID) {
-    console.error('Missing PRIVY_APP_ID environment variable');
-    return <div>Error: Privy configuration is missing.</div>;
+    console.error('Missing VITE_PRIVY_APP_ID environment variable');
+    return <div className="flex min-h-screen items-center justify-center p-4 text-center">
+      <div className="rounded-lg bg-white p-6 shadow-md">
+        <h2 className="mb-4 text-xl font-bold text-red-600">Configuration Error</h2>
+        <p className="mb-4">
+          The Privy App ID is missing. Please make sure you've added the VITE_PRIVY_APP_ID secret in your Supabase project.
+        </p>
+      </div>
+    </div>;
   }
 
   return (
