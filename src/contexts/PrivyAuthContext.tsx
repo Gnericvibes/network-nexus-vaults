@@ -23,31 +23,35 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   const navigate = useNavigate();
 
   useEffect(() => {
-    // When Privy is ready, update loading state
     if (ready) {
       setIsLoading(false);
     }
   }, [ready]);
 
-  // Sync Privy auth state with Supabase for backend permissions
+  // Sync Privy auth state with Supabase
   useEffect(() => {
     const syncWithSupabase = async () => {
       if (authenticated && user) {
         // User is authenticated in Privy, check if they exist in Supabase profiles
-        const { data, error } = await supabase
+        const { data: profile, error: fetchError } = await supabase
           .from('profiles')
-          .select('*')
+          .select()
           .eq('email', user.email?.address)
           .maybeSingle();
 
-        if (!data || error) {
+        if (!profile && !fetchError) {
           // Create profile if doesn't exist
-          await supabase
+          const { error: insertError } = await supabase
             .from('profiles')
-            .insert([{ 
+            .insert({
+              id: user.id, // Using Privy user ID
               email: user.email?.address,
               wallet_address: user.wallet?.address
-            }]);
+            });
+
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+          }
         }
       }
     };
@@ -86,7 +90,6 @@ export const usePrivyAuth = () => {
   return context;
 };
 
-// This is a wrapper component that provides Privy configuration
 export const PrivyAuthConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID;
   
