@@ -1,47 +1,16 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { Shield, Mail, Wallet } from 'lucide-react';
+import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
 import PageContainer from '@/components/layout/PageContainer';
-import { ArrowLeft, Mail, Shield } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 const Auth: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
-  const { toast } = useToast();
+  const { login, isLoading } = usePrivyAuth();
   const navigate = useNavigate();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      if (!email.includes('@') || !email.includes('.')) {
-        throw new Error('Please enter a valid email address');
-      }
-      
-      await login(email);
-      
-      toast({
-        title: 'Magic Link Sent',
-        description: 'Check your email for a login link',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to send login link',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <PageContainer className="flex items-center justify-center p-4">
@@ -61,7 +30,7 @@ const Auth: React.FC = () => {
               Welcome to Network Untop Network
             </CardTitle>
             <CardDescription className="text-center">
-              Enter your email to sign in or create an account
+              Sign in with email or connect your wallet
             </CardDescription>
           </CardHeader>
           
@@ -71,31 +40,26 @@ const Auth: React.FC = () => {
                 <Shield className="h-12 w-12 text-app-purple" />
               </div>
               
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-1">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      placeholder="name@example.com"
-                      className="pl-10"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-                
-                <Button
-                  type="submit"
-                  className="w-full mt-6"
+              <div className="flex flex-col space-y-4">
+                <Button 
+                  className="w-full"
+                  onClick={login}
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Sending...' : 'Send Magic Link'}
+                  <Mail className="mr-2 h-4 w-4" />
+                  {isLoading ? 'Loading...' : 'Continue with Email'}
                 </Button>
-              </form>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={login}
+                  disabled={isLoading}
+                >
+                  <Wallet className="mr-2 h-4 w-4" />
+                  {isLoading ? 'Loading...' : 'Connect Wallet'}
+                </Button>
+              </div>
             </div>
           </CardContent>
           

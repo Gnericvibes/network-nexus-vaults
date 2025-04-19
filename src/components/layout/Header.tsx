@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
 import { Menu, X, Wallet } from 'lucide-react';
 import {
   Sheet,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 
 const Header: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = usePrivyAuth();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
 
@@ -26,7 +26,7 @@ const Header: React.FC = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          {user?.isAuthenticated ? (
+          {isAuthenticated ? (
             <>
               <Link 
                 to="/dashboard" 
@@ -64,12 +64,14 @@ const Header: React.FC = () => {
               >
                 Settings
               </Link>
-              <div className="flex items-center gap-2 text-sm text-app-gray">
-                <Wallet size={16} />
-                <span className="hidden xl:inline">
-                  {user.wallet?.substring(0, 6)}...{user.wallet?.substring(user.wallet.length - 4)}
-                </span>
-              </div>
+              {user?.wallet && (
+                <div className="flex items-center gap-2 text-sm text-app-gray">
+                  <Wallet size={16} />
+                  <span className="hidden xl:inline">
+                    {user.wallet.substring(0, 6)}...{user.wallet.substring(user.wallet.length - 4)}
+                  </span>
+                </div>
+              )}
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -105,7 +107,7 @@ const Header: React.FC = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <nav className="flex flex-col gap-4 mt-8">
-                {user?.isAuthenticated ? (
+                {isAuthenticated ? (
                   <>
                     <Link 
                       to="/dashboard" 
@@ -143,10 +145,12 @@ const Header: React.FC = () => {
                     >
                       Settings
                     </Link>
-                    <div className="flex items-center gap-2 text-app-gray py-2 border-b">
-                      <Wallet size={18} />
-                      {user.wallet?.substring(0, 6)}...{user.wallet?.substring(user.wallet.length - 4)}
-                    </div>
+                    {user?.wallet && (
+                      <div className="flex items-center gap-2 text-app-gray py-2 border-b">
+                        <Wallet size={18} />
+                        {user.wallet.substring(0, 6)}...{user.wallet.substring(user.wallet.length - 4)}
+                      </div>
+                    )}
                     <Button 
                       className="mt-4" 
                       onClick={async () => await logout()}

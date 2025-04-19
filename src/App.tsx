@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { PrivyAuthConfigProvider, PrivyAuthProvider, usePrivyAuth } from "@/contexts/PrivyAuthContext";
 import { ChainProvider } from "@/contexts/ChainContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { TransactionProvider } from "@/contexts/TransactionContext";
@@ -19,15 +19,15 @@ import FiatPage from "./pages/FiatPage";
 import HistoryPage from "./pages/HistoryPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
-import { useAuth } from "./contexts/AuthContext";
+import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { isAuthenticated, isLoading } = usePrivyAuth();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-app-purple border-t-transparent rounded-full animate-spin"></div>
@@ -35,7 +35,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user || !user.isAuthenticated) {
+  if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -44,7 +44,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRoutes = () => (
   <Routes>
-    <Route path="/" element={<Landing />} />
+    <Route path="/" element={<Index />} />
+    <Route path="/landing" element={<Landing />} />
     <Route path="/auth" element={<Auth />} />
     
     {/* Protected Routes */}
@@ -84,22 +85,28 @@ const AppRoutes = () => (
   </Routes>
 );
 
+const AppWithProviders = () => (
+  <BrowserRouter>
+    <PrivyAuthProvider>
+      <ChainProvider>
+        <WalletProvider>
+          <TransactionProvider>
+            <AppRoutes />
+          </TransactionProvider>
+        </WalletProvider>
+      </ChainProvider>
+    </PrivyAuthProvider>
+  </BrowserRouter>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <ChainProvider>
-          <WalletProvider>
-            <TransactionProvider>
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
-            </TransactionProvider>
-          </WalletProvider>
-        </ChainProvider>
-      </AuthProvider>
+      <PrivyAuthConfigProvider>
+        <AppWithProviders />
+      </PrivyAuthConfigProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
