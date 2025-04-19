@@ -3,6 +3,7 @@ import React, { createContext, useContext, ReactNode, useEffect, useState } from
 import { usePrivy, PrivyProvider } from '@privy-io/react-auth';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PrivyAuthContextType {
   isAuthenticated: boolean;
@@ -32,26 +33,40 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   useEffect(() => {
     const syncWithSupabase = async () => {
       if (authenticated && user) {
-        // User is authenticated in Privy, check if they exist in Supabase profiles
-        const { data: profile, error: fetchError } = await supabase
-          .from('profiles')
-          .select()
-          .eq('email', user.email?.address)
-          .maybeSingle();
-
-        if (!profile && !fetchError) {
-          // Create profile if doesn't exist
-          const { error: insertError } = await supabase
+        try {
+          // User is authenticated in Privy, check if they exist in Supabase profiles
+          const { data: profile, error: fetchError } = await supabase
             .from('profiles')
-            .insert({
-              id: user.id, // Using Privy user ID
-              email: user.email?.address,
-              wallet_address: user.wallet?.address
-            });
+            .select()
+            .eq('email', user.email?.address)
+            .maybeSingle();
 
-          if (insertError) {
-            console.error('Error creating profile:', insertError);
+          if (!profile && !fetchError) {
+            // Create profile if doesn't exist
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id, // Using Privy user ID
+                email: user.email?.address,
+                wallet_address: user.wallet?.address
+              });
+
+            if (insertError) {
+              toast.error('Failed to create user profile', {
+                description: 'There was an issue setting up your account.'
+              });
+              console.error('Error creating profile:', insertError);
+            } else {
+              toast.success('Welcome!', {
+                description: 'Your account has been created successfully.'
+              });
+            }
           }
+        } catch (error) {
+          toast.error('Authentication Error', {
+            description: 'There was a problem syncing your account.'
+          });
+          console.error('Sync error:', error);
         }
       }
     };
@@ -72,6 +87,7 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     logout: async () => {
       await logout();
       navigate('/');
+      toast.success('Logged out successfully');
     }
   };
 
