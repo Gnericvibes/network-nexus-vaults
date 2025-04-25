@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 import { usePrivy, PrivyProvider } from '@privy-io/react-auth';
 import { useNavigate } from 'react-router-dom';
@@ -29,12 +28,10 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [ready]);
 
-  // Sync Privy auth state with Supabase
   useEffect(() => {
     const syncWithSupabase = async () => {
       if (authenticated && user) {
         try {
-          // User is authenticated in Privy, check if they exist in Supabase profiles
           const { data: profile, error: fetchError } = await supabase
             .from('profiles')
             .select()
@@ -42,11 +39,10 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
             .maybeSingle();
 
           if (!profile && !fetchError) {
-            // Create profile if doesn't exist
             const { error: insertError } = await supabase
               .from('profiles')
               .insert({
-                id: user.id, // Using Privy user ID
+                id: user.id,
                 email: user.email?.address,
                 wallet_address: user.wallet?.address
               });
@@ -107,22 +103,23 @@ export const usePrivyAuth = () => {
 };
 
 export const PrivyAuthConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Directly use your Privy App ID here instead of using environment variables
-  // You'll need to replace 'your-privy-app-id' with your actual Privy App ID
-  const PRIVY_APP_ID = 'INSERT_YOUR_ACTUAL_PRIVY_APP_ID_HERE';
-  
+  const PRIVY_APP_ID = 'YOUR_ACTUAL_PRIVY_APP_ID_HERE';
+
   console.log('Using Privy App ID:', PRIVY_APP_ID);
 
-  if (!PRIVY_APP_ID || PRIVY_APP_ID === 'INSERT_YOUR_ACTUAL_PRIVY_APP_ID_HERE') {
+  if (!PRIVY_APP_ID || PRIVY_APP_ID === 'YOUR_ACTUAL_PRIVY_APP_ID_HERE') {
     console.error('Privy App ID is missing or not correctly set');
-    return <div className="flex min-h-screen items-center justify-center p-4 text-center">
-      <div className="rounded-lg bg-white p-6 shadow-md">
-        <h2 className="mb-4 text-xl font-bold text-red-600">Configuration Error</h2>
-        <p className="mb-4">
-          The Privy App ID is not properly configured. Please replace 'INSERT_YOUR_ACTUAL_PRIVY_APP_ID_HERE' with your actual Privy App ID in the PrivyAuthContext.tsx file.
-        </p>
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4 text-center">
+        <div className="rounded-lg bg-white p-6 shadow-md">
+          <h2 className="mb-4 text-xl font-bold text-red-600">Configuration Error</h2>
+          <p className="mb-4">
+            The Privy App ID is not properly configured. Please replace 'YOUR_ACTUAL_PRIVY_APP_ID_HERE' 
+            with your actual Privy App ID in the PrivyAuthContext.tsx file.
+          </p>
+        </div>
       </div>
-    </div>;
+    );
   }
 
   return (
