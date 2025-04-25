@@ -103,19 +103,18 @@ export const usePrivyAuth = () => {
 };
 
 export const PrivyAuthConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const PRIVY_APP_ID = 'cm9lz7gq800d4l80mm0p6xze7'; // Hardcoded Privy App ID
+  const PRIVY_APP_ID = 'cm9lz7gq800d4l80mm0p6xze7';
   
   console.log('Using Privy App ID:', PRIVY_APP_ID);
 
-  if (!PRIVY_APP_ID || PRIVY_APP_ID === 'cm9lz7gq800d4l80mm0p6xze7') {
-    console.error('Privy App ID is missing or not correctly set');
+  if (!PRIVY_APP_ID) {
+    console.error('Privy App ID is missing');
     return (
       <div className="flex min-h-screen items-center justify-center p-4 text-center">
         <div className="rounded-lg bg-white p-6 shadow-md">
           <h2 className="mb-4 text-xl font-bold text-red-600">Configuration Error</h2>
           <p className="mb-4">
-            The Privy App ID is not properly configured. Please replace the hardcoded App ID 
-            with your actual Privy App ID in the PrivyAuthContext.tsx file.
+            The Privy App ID is not properly configured. Please add your Privy App ID.
           </p>
         </div>
       </div>
