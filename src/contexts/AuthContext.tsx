@@ -1,6 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
 
 interface User {
   email: string | null;
@@ -21,6 +21,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const privyAuth = usePrivyAuth();
+
+  useEffect(() => {
+    // Sync with Privy auth state
+    if (privyAuth.user) {
+      setUser({
+        email: privyAuth.user.email,
+        wallet: privyAuth.user.wallet,
+        isAuthenticated: privyAuth.isAuthenticated
+      });
+    } else {
+      setUser(null);
+    }
+    
+    setLoading(privyAuth.isLoading);
+  }, [privyAuth.user, privyAuth.isAuthenticated, privyAuth.isLoading]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -75,14 +91,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: true
-        }
-      });
-
-      if (error) throw error;
+      // Use Privy auth instead, but keep this for backward compatibility
+      await privyAuth.login();
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -94,8 +104,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      // Use Privy auth instead, but keep this for backward compatibility
+      await privyAuth.logout();
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);

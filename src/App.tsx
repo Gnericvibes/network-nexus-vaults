@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PrivyAuthConfigProvider, PrivyAuthProvider, usePrivyAuth } from "@/contexts/PrivyAuthContext";
 import { ChainProvider } from "@/contexts/ChainContext";
+import { AuthProvider } from "@/contexts/AuthContext"; // Import AuthProvider
 import { WalletProvider } from "@/contexts/WalletContext";
 import { TransactionProvider } from "@/contexts/TransactionContext";
 
@@ -88,13 +89,15 @@ const AppRoutes = () => (
 const AppWithProviders = () => (
   <BrowserRouter>
     <PrivyAuthProvider>
-      <ChainProvider>
-        <WalletProvider>
-          <TransactionProvider>
-            <AppRoutes />
-          </TransactionProvider>
-        </WalletProvider>
-      </ChainProvider>
+      <AuthProvider> {/* Add AuthProvider here */}
+        <ChainProvider>
+          <WalletProvider>
+            <TransactionProvider>
+              <AppRoutes />
+            </TransactionProvider>
+          </WalletProvider>
+        </ChainProvider>
+      </AuthProvider>
     </PrivyAuthProvider>
   </BrowserRouter>
 );
