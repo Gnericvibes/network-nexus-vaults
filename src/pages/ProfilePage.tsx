@@ -10,7 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Edit, Save } from 'lucide-react';
+import BankAccountsList from '@/components/profile/BankAccountsList';
 
 interface ProfileData {
   first_name: string | null;
@@ -31,6 +34,7 @@ const ProfilePage = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('personal');
 
   useEffect(() => {
     fetchProfileData();
@@ -96,11 +100,17 @@ const ProfilePage = () => {
     }
   };
 
+  const getInitials = () => {
+    const first = profileData.first_name?.charAt(0) || '';
+    const last = profileData.last_name?.charAt(0) || '';
+    return (first + last).toUpperCase() || 'U';
+  };
+
   if (isLoading) {
     return (
       <PageContainer>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="w-8 h-8 border-4 border-app-purple border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
       </PageContainer>
     );
@@ -110,74 +120,109 @@ const ProfilePage = () => {
     <PageContainer>
       <div className="container mx-auto py-8 px-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold gradient-text">Profile Settings</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage your profile information
-            </p>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              {profileData.avatar_url ? (
+                <AvatarImage src={profileData.avatar_url} alt="Profile picture" />
+              ) : (
+                <AvatarFallback>{getInitials()}</AvatarFallback>
+              )}
+            </Avatar>
+            <div>
+              <h1 className="text-3xl font-bold gradient-text">
+                {profileData.first_name || profileData.last_name 
+                  ? `${profileData.first_name || ''} ${profileData.last_name || ''}` 
+                  : 'Your Profile'}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Manage your profile information and bank accounts
+              </p>
+            </div>
           </div>
-          <Button
-            variant={isEditing ? "default" : "outline"}
-            onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-            className="mt-4 md:mt-0"
-          >
-            {isEditing ? (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </>
-            ) : (
-              <>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Profile
-              </>
-            )}
-          </Button>
+          {activeTab === 'personal' && (
+            <Button
+              variant={isEditing ? "default" : "outline"}
+              onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+              className="mt-4 md:mt-0"
+            >
+              {isEditing ? (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              ) : (
+                <>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </>
+              )}
+            </Button>
+          )}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Personal Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={profileData.first_name || ''}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, first_name: e.target.value }))}
-                  disabled={!isEditing}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={profileData.last_name || ''}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, last_name: e.target.value }))}
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="personal">Personal Info</TabsTrigger>
+            <TabsTrigger value="bank">Bank Accounts</TabsTrigger>
+          </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                value={profileData.bio || ''}
-                onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
-                disabled={!isEditing}
-                placeholder="Tell us about yourself..."
-                className="min-h-[100px]"
-              />
-            </div>
-          </CardContent>
-        </Card>
+          <TabsContent value="personal" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Personal Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      value={profileData.first_name || ''}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, first_name: e.target.value }))}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      value={profileData.last_name || ''}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, last_name: e.target.value }))}
+                      disabled={!isEditing}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={profileData.bio || ''}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                    disabled={!isEditing}
+                    placeholder="Tell us about yourself..."
+                    className="min-h-[100px]"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="bank">
+            <Card>
+              <CardHeader>
+                <CardTitle>Bank Account Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <BankAccountsList />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </PageContainer>
   );
