@@ -29,6 +29,13 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [ready]);
 
+  // Handle redirection after authentication
+  useEffect(() => {
+    if (authenticated && !isLoading) {
+      navigate('/profile');
+    }
+  }, [authenticated, isLoading, navigate]);
+
   useEffect(() => {
     const syncWithSupabase = async () => {
       if (authenticated && user) {
@@ -41,12 +48,25 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
             return;
           }
 
-          // Check if profile exists
-          const { data: profile, error: fetchError } = await supabase
+          // Check if profile exists - build the proper query
+          let query = supabase
             .from('profiles')
             .select()
-            .or(`email.eq.${userIdentifier},wallet_address.eq.${userIdentifier}`)
             .maybeSingle();
+          
+          // Add conditions based on available identifiers
+          if (user.email?.address && user.wallet?.address) {
+            // Check for either email or wallet match
+            query = query.or(`email.eq.${user.email.address},wallet_address.eq.${user.wallet.address}`);
+          } else if (user.email?.address) {
+            // Only email is available
+            query = query.eq('email', user.email.address);
+          } else if (user.wallet?.address) {
+            // Only wallet is available
+            query = query.eq('wallet_address', user.wallet.address);
+          }
+
+          const { data: profile, error: fetchError } = await query;
 
           if (!profile && !fetchError) {
             // Create new profile
@@ -66,6 +86,7 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
             } else {
               toast.success('Welcome!', {
                 description: 'Your account has been created successfully.'
+                // Redirect will happen automatically due to the authenticated state change
               });
             }
           } else if (fetchError) {
@@ -101,7 +122,7 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
               }
             }
             
-            // Silent success - profile already exists
+            // Redirect to profile already happens via the useEffect
           }
         } catch (error) {
           toast.error('Authentication Error', {
@@ -115,7 +136,7 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (authenticated && user) {
       syncWithSupabase();
     }
-  }, [authenticated, user]);
+  }, [authenticated, user, navigate]);
 
   const contextValue: PrivyAuthContextType = {
     isAuthenticated: authenticated,

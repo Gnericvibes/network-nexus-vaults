@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,15 @@ import PageContainer from '@/components/layout/PageContainer';
 import { ArrowLeft } from 'lucide-react';
 
 const Auth: React.FC = () => {
-  const { login, isLoading } = usePrivyAuth();
+  const { login, isLoading, isAuthenticated } = usePrivyAuth();
   const navigate = useNavigate();
+
+  // Redirect authenticated users to profile
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/profile');
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <PageContainer className="flex items-center justify-center p-4">

@@ -3,7 +3,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
-import { Menu, X, Wallet } from 'lucide-react';
+import { Menu, X, Wallet, User } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -59,10 +59,11 @@ const Header: React.FC = () => {
                 History
               </Link>
               <Link 
-                to="/settings" 
-                className="text-sm font-medium hover:text-app-purple transition-colors"
+                to="/profile" 
+                className="text-sm font-medium hover:text-app-purple transition-colors flex items-center gap-1"
               >
-                Settings
+                <User size={16} />
+                Profile
               </Link>
               {user?.wallet && (
                 <div className="flex items-center gap-2 text-sm text-app-gray">
@@ -138,6 +139,13 @@ const Header: React.FC = () => {
                       className="text-lg font-medium hover:text-app-purple transition-colors py-2 border-b"
                     >
                       History
+                    </Link>
+                    <Link 
+                      to="/profile" 
+                      className="text-lg font-medium hover:text-app-purple transition-colors py-2 border-b flex items-center gap-2"
+                    >
+                      <User size={18} />
+                      Profile
                     </Link>
                     <Link 
                       to="/settings" 
