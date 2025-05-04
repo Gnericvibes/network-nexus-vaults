@@ -1,10 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { PrivyAuthConfigProvider, PrivyAuthProvider, usePrivyAuth } from "@/contexts/PrivyAuthContext";
+import { PrivyConfigProvider, PrivyAuthProvider, usePrivyAuth } from "@/contexts/PrivyAuthContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ChainProvider } from "@/contexts/ChainContext";
 import { WalletProvider } from "@/contexts/WalletContext";
@@ -92,10 +91,10 @@ const AppRoutes = () => (
   </Routes>
 );
 
-// Fixed: Adjusted provider nesting order to ensure correct context hierarchy
+// Use refactored providers with correct nesting order
 const AppWithProviders = () => (
   <BrowserRouter>
-    <PrivyAuthConfigProvider>
+    <PrivyConfigProvider>
       <PrivyAuthProvider>
         <AuthProvider>
           <ChainProvider>
@@ -107,7 +106,7 @@ const AppWithProviders = () => (
           </ChainProvider>
         </AuthProvider>
       </PrivyAuthProvider>
-    </PrivyAuthConfigProvider>
+    </PrivyConfigProvider>
   </BrowserRouter>
 );
 
