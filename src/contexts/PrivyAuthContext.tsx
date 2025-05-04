@@ -48,32 +48,40 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
             return;
           }
 
-          // Check if profile exists - build the proper query for email or wallet
-          let { data: profile, error: fetchError } = await supabase
-            .from('profiles')
-            .select('*');
+          let profile = null;
+          let fetchError = null;
 
+          // Check if profile exists by email or wallet
           if (user.email?.address && user.wallet?.address) {
-            profile = await supabase
+            // Check for both email and wallet
+            const { data, error } = await supabase
               .from('profiles')
               .select('*')
               .or(`email.eq.${user.email.address},wallet_address.eq.${user.wallet.address}`)
-              .maybeSingle()
-              .then(result => result.data);
+              .maybeSingle();
+            
+            profile = data;
+            fetchError = error;
           } else if (user.email?.address) {
-            profile = await supabase
+            // Only email is available
+            const { data, error } = await supabase
               .from('profiles')
               .select('*')
               .eq('email', user.email.address)
-              .maybeSingle()
-              .then(result => result.data);
+              .maybeSingle();
+            
+            profile = data;
+            fetchError = error;
           } else if (user.wallet?.address) {
-            profile = await supabase
+            // Only wallet is available
+            const { data, error } = await supabase
               .from('profiles')
               .select('*')
               .eq('wallet_address', user.wallet.address)
-              .maybeSingle()
-              .then(result => result.data);
+              .maybeSingle();
+            
+            profile = data;
+            fetchError = error;
           }
 
           if (!profile && !fetchError) {
@@ -102,7 +110,7 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
             toast.error('Authentication Error', {
               description: 'Could not verify your account.'
             });
-          } else {
+          } else if (profile) {
             // Profile exists, update it if needed
             const updates: any = {};
             let needsUpdate = false;
