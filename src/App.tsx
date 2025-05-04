@@ -1,11 +1,12 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PrivyAuthConfigProvider, PrivyAuthProvider, usePrivyAuth } from "@/contexts/PrivyAuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { ChainProvider } from "@/contexts/ChainContext";
-import { AuthProvider } from "@/contexts/AuthContext"; // Import AuthProvider
 import { WalletProvider } from "@/contexts/WalletContext";
 import { TransactionProvider } from "@/contexts/TransactionContext";
 
@@ -91,19 +92,22 @@ const AppRoutes = () => (
   </Routes>
 );
 
+// Fixed: Adjusted provider nesting order to ensure correct context hierarchy
 const AppWithProviders = () => (
   <BrowserRouter>
-    <PrivyAuthProvider>
-      <AuthProvider> {/* Add AuthProvider here */}
-        <ChainProvider>
-          <WalletProvider>
-            <TransactionProvider>
-              <AppRoutes />
-            </TransactionProvider>
-          </WalletProvider>
-        </ChainProvider>
-      </AuthProvider>
-    </PrivyAuthProvider>
+    <PrivyAuthConfigProvider>
+      <PrivyAuthProvider>
+        <AuthProvider>
+          <ChainProvider>
+            <WalletProvider>
+              <TransactionProvider>
+                <AppRoutes />
+              </TransactionProvider>
+            </WalletProvider>
+          </ChainProvider>
+        </AuthProvider>
+      </PrivyAuthProvider>
+    </PrivyAuthConfigProvider>
   </BrowserRouter>
 );
 
@@ -112,9 +116,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <PrivyAuthConfigProvider>
-        <AppWithProviders />
-      </PrivyAuthConfigProvider>
+      <AppWithProviders />
     </TooltipProvider>
   </QueryClientProvider>
 );

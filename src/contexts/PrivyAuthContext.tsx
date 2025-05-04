@@ -48,25 +48,33 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
             return;
           }
 
-          // Check if profile exists - build the proper query
-          let query = supabase
+          // Check if profile exists - build the proper query for email or wallet
+          let { data: profile, error: fetchError } = await supabase
             .from('profiles')
-            .select()
-            .maybeSingle();
-          
-          // Add conditions based on available identifiers
-          if (user.email?.address && user.wallet?.address) {
-            // Check for either email or wallet match
-            query = query.or(`email.eq.${user.email.address},wallet_address.eq.${user.wallet.address}`);
-          } else if (user.email?.address) {
-            // Only email is available
-            query = query.eq('email', user.email.address);
-          } else if (user.wallet?.address) {
-            // Only wallet is available
-            query = query.eq('wallet_address', user.wallet.address);
-          }
+            .select('*');
 
-          const { data: profile, error: fetchError } = await query;
+          if (user.email?.address && user.wallet?.address) {
+            profile = await supabase
+              .from('profiles')
+              .select('*')
+              .or(`email.eq.${user.email.address},wallet_address.eq.${user.wallet.address}`)
+              .maybeSingle()
+              .then(result => result.data);
+          } else if (user.email?.address) {
+            profile = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('email', user.email.address)
+              .maybeSingle()
+              .then(result => result.data);
+          } else if (user.wallet?.address) {
+            profile = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('wallet_address', user.wallet.address)
+              .maybeSingle()
+              .then(result => result.data);
+          }
 
           if (!profile && !fetchError) {
             // Create new profile
