@@ -36,10 +36,10 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { currentChain } = useChain();
-  const [balances, setBalances] = useState({ usdc: '0', usdcUsdValue: 0 });
+  const [balances, setBalances] = useState({ usdc: '0.00', usdcUsdValue: 0 });
   const [staked, setStaked] = useState<StakedAmount[]>([]);
-  const [totalStaked, setTotalStaked] = useState('0');
-  const [totalRewards, setTotalRewards] = useState('0');
+  const [totalStaked, setTotalStaked] = useState('0.00');
+  const [totalRewards, setTotalRewards] = useState('0.00');
   const [isLoading, setIsLoading] = useState(false);
 
   // Load wallet data when user or chain changes
@@ -65,8 +65,8 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       setTotalStaked(stakedTotal);
       setTotalRewards(rewardsTotal);
     } else {
-      setTotalStaked('0');
-      setTotalRewards('0');
+      setTotalStaked('0.00');
+      setTotalRewards('0.00');
     }
   }, [staked]);
 
@@ -78,7 +78,18 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       // Mock API call to fetch balances
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Simulate different balances based on chain
+      // For testing, we'll default to zero balances for now
+      // This can be modified later when testnet tokens are available
+      setBalances({
+        usdc: '0.00',
+        usdcUsdValue: 0
+      });
+      
+      // Default to empty staked positions for initial testing
+      setStaked([]);
+      
+      // Uncomment the below code when you want to show mock data for testing UI
+      /*
       if (currentChain === 'ethereum') {
         // Fetch balances for Ethereum chain
         setBalances({
@@ -128,6 +139,7 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           }
         ]);
       }
+      */
     } catch (error) {
       console.error('Failed to refresh balances:', error);
     } finally {

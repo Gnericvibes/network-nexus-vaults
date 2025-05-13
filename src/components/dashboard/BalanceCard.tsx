@@ -31,7 +31,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({
           <div className="h-9 w-3/4 bg-muted animate-pulse-slow rounded"></div>
         ) : (
           <>
-            <div className="text-2xl font-bold">${amount}</div>
+            <div className="text-2xl font-bold">${amount || '0.00'}</div>
             {subtitle && (
               <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
             )}
