@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSyncSupabaseProfile } from '@/hooks/useSyncSupabaseProfile';
 import { toast } from 'sonner';
 
@@ -25,6 +25,7 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   const { login, logout, authenticated, user, ready } = usePrivy();
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Sync with Supabase profile
   const { isSyncing } = useSyncSupabaseProfile(authenticated, user);
@@ -36,12 +37,18 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [ready]);
 
-  // Handle redirection after authentication - changed from /profile to /dashboard
+  // Handle redirection after authentication - but prevent loops
   useEffect(() => {
     if (authenticated && !isLoading && !isSyncing) {
-      navigate('/dashboard');
+      // Only redirect to dashboard if we're on the auth or root page
+      if (location.pathname === '/auth' || location.pathname === '/') {
+        navigate('/dashboard');
+      }
+    } else if (!authenticated && !isLoading && location.pathname !== '/' && location.pathname !== '/auth' && location.pathname !== '/landing') {
+      // If not authenticated and not on public pages, redirect to auth
+      navigate('/auth');
     }
-  }, [authenticated, isLoading, isSyncing, navigate]);
+  }, [authenticated, isLoading, isSyncing, navigate, location.pathname]);
 
   const contextValue: PrivyAuthContextType = {
     isAuthenticated: authenticated,

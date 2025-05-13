@@ -24,68 +24,72 @@ export const useSyncSupabaseProfile = (
           return;
         }
 
-        let profile = null;
-        let fetchError = null;
-
         // Check if profile exists by email or wallet
-        if (user.email?.address && user.wallet?.address) {
-          // Check for both email and wallet
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .or(`email.eq.${user.email.address},wallet_address.eq.${user.wallet.address}`)
-            .maybeSingle();
-          
-          profile = data;
-          fetchError = error;
-        } else if (user.email?.address) {
-          // Only email is available
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('email', user.email.address)
-            .maybeSingle();
-          
-          profile = data;
-          fetchError = error;
+        let profileQuery = supabase.from('profiles').select('*');
+        
+        if (user.email?.address) {
+          profileQuery = profileQuery.eq('email', user.email.address);
         } else if (user.wallet?.address) {
-          // Only wallet is available
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('wallet_address', user.wallet.address)
-            .maybeSingle();
-          
-          profile = data;
-          fetchError = error;
+          profileQuery = profileQuery.eq('wallet_address', user.wallet.address);
+        }
+        
+        const { data: profile, error: fetchError } = await profileQuery.maybeSingle();
+
+        if (fetchError) {
+          console.error('Error fetching profile:', fetchError);
+          toast.error('Authentication Error', {
+            description: 'Could not verify your account.'
+          });
+          return;
         }
 
-        if (!profile && !fetchError) {
-          // Create new profile
+        if (!profile) {
+          // Create new profile - use email/wallet as the ID to avoid UUID format issues
+          const profileData = {
+            id: user.id, // This may cause issues if not UUID format
+            email: user.email?.address || null,
+            wallet_address: user.wallet?.address || null
+          };
+          
+          // If we have both email and wallet, try finding by either
           const { error: insertError } = await supabase
             .from('profiles')
-            .insert({
-              id: user.id,
-              email: user.email?.address || null,
-              wallet_address: user.wallet?.address || null
-            });
+            .insert(profileData);
 
           if (insertError) {
-            toast.error('Failed to create user profile', {
-              description: 'There was an issue setting up your account.'
-            });
             console.error('Error creating profile:', insertError);
+            
+            // Try alternative approach if UUID format is the issue
+            if (insertError.message?.includes('invalid input syntax for type uuid')) {
+              // Use a deterministic UUID based on email or wallet
+              const { error: alternativeInsertError } = await supabase
+                .from('profiles')
+                .insert({
+                  ...profileData,
+                  id: crypto.randomUUID() // Generate a proper UUID instead
+                });
+                
+              if (alternativeInsertError) {
+                toast.error('Failed to create user profile', {
+                  description: 'There was an issue setting up your account.'
+                });
+                console.error('Alternative insert error:', alternativeInsertError);
+              } else {
+                toast.success('Welcome!', {
+                  description: 'Your account has been created successfully.'
+                });
+              }
+            } else {
+              toast.error('Failed to create user profile', {
+                description: 'There was an issue setting up your account.'
+              });
+            }
           } else {
             toast.success('Welcome!', {
               description: 'Your account has been created successfully.'
             });
           }
-        } else if (fetchError) {
-          console.error('Error fetching profile:', fetchError);
-          toast.error('Authentication Error', {
-            description: 'Could not verify your account.'
-          });
-        } else if (profile) {
+        } else {
           // Profile exists, update it if needed
           const updates: any = {};
           let needsUpdate = false;

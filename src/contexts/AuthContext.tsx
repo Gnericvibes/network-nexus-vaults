@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface User {
@@ -26,6 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const privyAuth = usePrivyAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Sync with Privy auth state
@@ -64,8 +65,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             isAuthenticated: true
           });
           
-          // Redirect to dashboard after successful authentication
-          navigate('/dashboard');
+          // Only redirect to dashboard if we're on auth or root pages
+          if (location.pathname === '/auth' || location.pathname === '/') {
+            navigate('/dashboard');
+          }
         }
       } catch (error) {
         console.error('Session check failed:', error);
@@ -86,9 +89,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           isAuthenticated: true
         });
         
-        // Redirect to dashboard after sign in
-        navigate('/dashboard');
-        toast.success('Signed in successfully');
+        // Only redirect to dashboard if we're on auth or root pages
+        if (location.pathname === '/auth' || location.pathname === '/') {
+          navigate('/dashboard');
+          toast.success('Signed in successfully');
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         navigate('/');
@@ -98,7 +103,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   const login = async (email: string) => {
     setLoading(true);
