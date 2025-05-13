@@ -52,17 +52,17 @@ const Index = () => {
             <Button 
               size="lg" 
               className="text-lg"
-              onClick={() => navigate('/landing')}
+              onClick={() => navigate('/auth')}
             >
-              Learn More <ArrowRight className="ml-2 h-5 w-5" />
+              Get Started <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button 
               size="lg" 
               variant="outline" 
               className="text-lg"
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/landing')}
             >
-              Get Started
+              Learn More
             </Button>
           </div>
         </div>

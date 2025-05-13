@@ -36,10 +36,10 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [ready]);
 
-  // Handle redirection after authentication
+  // Handle redirection after authentication - changed from /profile to /dashboard
   useEffect(() => {
     if (authenticated && !isLoading && !isSyncing) {
-      navigate('/profile');
+      navigate('/dashboard');
     }
   }, [authenticated, isLoading, isSyncing, navigate]);
 

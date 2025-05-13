@@ -7,15 +7,19 @@ import { Shield, Mail, Wallet } from 'lucide-react';
 import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
 import PageContainer from '@/components/layout/PageContainer';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Auth: React.FC = () => {
   const { login, isLoading, isAuthenticated } = usePrivyAuth();
   const navigate = useNavigate();
 
-  // Redirect authenticated users to profile
+  // Redirect authenticated users to dashboard (not profile)
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/profile');
+      navigate('/dashboard');
+      toast.success('Welcome back!', {
+        description: 'You have successfully signed in',
+      });
     }
   }, [isAuthenticated, navigate]);
 

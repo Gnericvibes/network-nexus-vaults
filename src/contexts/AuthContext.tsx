@@ -1,6 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface User {
   email: string | null;
@@ -22,6 +25,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const privyAuth = usePrivyAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Sync with Privy auth state
@@ -59,6 +63,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             wallet: profileData?.wallet_address,
             isAuthenticated: true
           });
+          
+          // Redirect to dashboard after successful authentication
+          navigate('/dashboard');
         }
       } catch (error) {
         console.error('Session check failed:', error);
@@ -78,15 +85,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           wallet: null, // You might want to fetch this from profiles
           isAuthenticated: true
         });
+        
+        // Redirect to dashboard after sign in
+        navigate('/dashboard');
+        toast.success('Signed in successfully');
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        navigate('/');
       }
     });
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const login = async (email: string) => {
     setLoading(true);
