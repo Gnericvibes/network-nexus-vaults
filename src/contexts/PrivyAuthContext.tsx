@@ -37,18 +37,8 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [ready]);
 
-  // Handle redirection after authentication - but prevent loops
-  useEffect(() => {
-    if (authenticated && !isLoading && !isSyncing) {
-      // Only redirect to dashboard if we're on the auth or root page
-      if (location.pathname === '/auth' || location.pathname === '/') {
-        navigate('/dashboard');
-      }
-    } else if (!authenticated && !isLoading && location.pathname !== '/' && location.pathname !== '/auth' && location.pathname !== '/landing') {
-      // If not authenticated and not on public pages, redirect to auth
-      navigate('/auth');
-    }
-  }, [authenticated, isLoading, isSyncing, navigate, location.pathname]);
+  // Remove automatic redirects from this component - we'll handle them in the route components
+  // This prevents navigation loops and allows all pages to be viewable
 
   const contextValue: PrivyAuthContextType = {
     isAuthenticated: authenticated,
@@ -60,6 +50,7 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     login,
     logout: async () => {
       await logout();
+      // Only navigate after logout, not trying to manage all navigation here
       navigate('/');
       toast.success('Logged out successfully');
     }

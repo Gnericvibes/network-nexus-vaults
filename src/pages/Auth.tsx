@@ -1,6 +1,6 @@
 
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Shield, Mail, Wallet } from 'lucide-react';
@@ -10,18 +10,27 @@ import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Auth: React.FC = () => {
-  const { login, isLoading, isAuthenticated } = usePrivyAuth();
+  const { login, isLoading } = usePrivyAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Redirect authenticated users to dashboard (not profile)
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-      toast.success('Welcome back!', {
-        description: 'You have successfully signed in',
+  // Get the pathname from location state, or default to dashboard
+  const from = location.state?.from || '/dashboard';
+
+  const handleLogin = async () => {
+    try {
+      await login();
+      // Navigation will be handled by PublicRoute instead of here
+      toast.success('Sign in successful', {
+        description: 'Redirecting to your dashboard',
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('Sign in failed', {
+        description: 'Please try again',
       });
     }
-  }, [isAuthenticated, navigate]);
+  };
 
   return (
     <PageContainer className="flex items-center justify-center p-4">
@@ -54,7 +63,7 @@ const Auth: React.FC = () => {
               <div className="flex flex-col space-y-4">
                 <Button 
                   className="w-full"
-                  onClick={login}
+                  onClick={handleLogin}
                   disabled={isLoading}
                 >
                   <Mail className="mr-2 h-4 w-4" />
@@ -64,7 +73,7 @@ const Auth: React.FC = () => {
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={login}
+                  onClick={handleLogin}
                   disabled={isLoading}
                 >
                   <Wallet className="mr-2 h-4 w-4" />

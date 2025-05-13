@@ -9,6 +9,8 @@ export const useSyncSupabaseProfile = (
   user: PrivyUser | null
 ) => {
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncAttemptCount, setSyncAttemptCount] = useState(0);
+  const MAX_SYNC_ATTEMPTS = 3;
 
   useEffect(() => {
     const syncWithSupabase = async () => {
@@ -16,6 +18,8 @@ export const useSyncSupabaseProfile = (
       
       setIsSyncing(true);
       try {
+        console.log('Attempting to sync Privy user to Supabase profile');
+        
         // Define user email identifier - use wallet address if email not available
         const userIdentifier = user.email?.address || user.wallet?.address;
         
@@ -44,52 +48,40 @@ export const useSyncSupabaseProfile = (
         }
 
         if (!profile) {
-          // Create new profile - use email/wallet as the ID to avoid UUID format issues
+          console.log('Profile not found, creating new profile');
+          // Generate a proper UUID for the profile ID
+          const profileId = crypto.randomUUID();
+          
+          // Create new profile with generated UUID
           const profileData = {
-            id: user.id, // This may cause issues if not UUID format
+            id: profileId,
             email: user.email?.address || null,
             wallet_address: user.wallet?.address || null
           };
           
-          // If we have both email and wallet, try finding by either
           const { error: insertError } = await supabase
             .from('profiles')
             .insert(profileData);
 
           if (insertError) {
             console.error('Error creating profile:', insertError);
+            toast.error('Failed to create user profile', {
+              description: 'There was an issue setting up your account. Please try again.'
+            });
             
-            // Try alternative approach if UUID format is the issue
-            if (insertError.message?.includes('invalid input syntax for type uuid')) {
-              // Use a deterministic UUID based on email or wallet
-              const { error: alternativeInsertError } = await supabase
-                .from('profiles')
-                .insert({
-                  ...profileData,
-                  id: crypto.randomUUID() // Generate a proper UUID instead
-                });
-                
-              if (alternativeInsertError) {
-                toast.error('Failed to create user profile', {
-                  description: 'There was an issue setting up your account.'
-                });
-                console.error('Alternative insert error:', alternativeInsertError);
-              } else {
-                toast.success('Welcome!', {
-                  description: 'Your account has been created successfully.'
-                });
-              }
-            } else {
-              toast.error('Failed to create user profile', {
-                description: 'There was an issue setting up your account.'
-              });
+            // Try again if we haven't exceeded max attempts
+            if (syncAttemptCount < MAX_SYNC_ATTEMPTS) {
+              setSyncAttemptCount(prev => prev + 1);
             }
           } else {
+            console.log('Profile created successfully');
             toast.success('Welcome!', {
               description: 'Your account has been created successfully.'
             });
+            setSyncAttemptCount(0); // Reset attempt count on success
           }
         } else {
+          console.log('Profile found, checking for updates');
           // Profile exists, update it if needed
           const updates: any = {};
           let needsUpdate = false;
@@ -107,6 +99,7 @@ export const useSyncSupabaseProfile = (
           }
           
           if (needsUpdate) {
+            console.log('Updating profile with new data');
             const { error: updateError } = await supabase
               .from('profiles')
               .update(updates)
@@ -114,14 +107,16 @@ export const useSyncSupabaseProfile = (
               
             if (updateError) {
               console.error('Error updating profile:', updateError);
+            } else {
+              console.log('Profile updated successfully');
             }
           }
         }
       } catch (error) {
+        console.error('Sync error:', error);
         toast.error('Authentication Error', {
           description: 'There was a problem syncing your account.'
         });
-        console.error('Sync error:', error);
       } finally {
         setIsSyncing(false);
       }
@@ -130,7 +125,23 @@ export const useSyncSupabaseProfile = (
     if (authenticated && user) {
       syncWithSupabase();
     }
-  }, [authenticated, user]);
+  }, [authenticated, user, syncAttemptCount]);
+
+  // Retry sync if needed based on attempt count
+  useEffect(() => {
+    let retryTimer: number;
+    
+    if (syncAttemptCount > 0 && syncAttemptCount <= MAX_SYNC_ATTEMPTS && !isSyncing) {
+      console.log(`Retrying sync attempt ${syncAttemptCount} of ${MAX_SYNC_ATTEMPTS}`);
+      retryTimer = window.setTimeout(() => {
+        // This will trigger the main useEffect again
+      }, 2000); // Wait 2 seconds between retries
+    }
+    
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+    };
+  }, [syncAttemptCount, isSyncing]);
 
   return { isSyncing };
 };

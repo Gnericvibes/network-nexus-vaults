@@ -25,7 +25,7 @@ import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
 
-// Protected route wrapper
+// Protected route wrapper with improved handling
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = usePrivyAuth();
   const location = useLocation();
@@ -38,8 +38,32 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
+  // Only redirect to auth if not authenticated, but store current location
   if (!isAuthenticated) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Public route wrapper to prevent authenticated users from accessing certain pages
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading } = usePrivyAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-app-purple border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // If authenticated and trying to access public routes like auth, redirect to dashboard
+  // or to the originally requested page if coming from a protected route
+  if (isAuthenticated && (location.pathname === '/auth')) {
+    const from = location.state?.from || '/dashboard';
+    return <Navigate to={from} replace />;
   }
 
   return <>{children}</>;
@@ -47,9 +71,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRoutes = () => (
   <Routes>
+    {/* Public Routes */}
     <Route path="/" element={<Index />} />
     <Route path="/landing" element={<Landing />} />
-    <Route path="/auth" element={<Auth />} />
+    <Route path="/auth" element={
+      <PublicRoute>
+        <Auth />
+      </PublicRoute>
+    } />
     
     {/* Protected Routes */}
     <Route path="/dashboard" element={
