@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Lock, Unlock } from 'lucide-react';
+import { Clock, Lock, Unlock, Target } from 'lucide-react';
 
 interface StakedItemCardProps {
   amount: string;
@@ -10,6 +10,7 @@ interface StakedItemCardProps {
   rewards: string;
   lockPeriod: number;
   unlockDate: Date;
+  goalName?: string; // Added goalName prop
   onWithdraw: () => void;
 }
 
@@ -19,6 +20,7 @@ const StakedItemCard: React.FC<StakedItemCardProps> = ({
   rewards,
   lockPeriod,
   unlockDate,
+  goalName = 'Savings Goal', // Default value if none is provided
   onWithdraw
 }) => {
   const isUnlocked = new Date() >= unlockDate;
@@ -46,7 +48,7 @@ const StakedItemCard: React.FC<StakedItemCardProps> = ({
     <Card className="overflow-hidden">
       <div className={`h-2 w-full bg-${protocolColor}`} />
       <CardContent className="pt-6">
-        <div className="flex justify-between mb-4">
+        <div className="flex justify-between mb-2">
           <span className="text-sm font-medium text-muted-foreground">
             {protocol}
           </span>
@@ -63,6 +65,12 @@ const StakedItemCard: React.FC<StakedItemCardProps> = ({
               </div>
             )}
           </span>
+        </div>
+        
+        {/* Goal name section */}
+        <div className="mb-3 flex items-center text-app-purple">
+          <Target size={16} className="mr-1" />
+          <span className="font-medium text-sm truncate">{goalName}</span>
         </div>
         
         <div className="space-y-2">

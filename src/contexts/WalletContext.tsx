@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useChain } from './ChainContext';
@@ -14,6 +15,7 @@ interface StakedAmount {
   lockPeriod: number; // in months
   unlockDate: Date;
   rewards: string;
+  goalName?: string; // Added goalName field
 }
 
 interface WalletContextType {
@@ -29,7 +31,7 @@ interface WalletContextType {
   totalRewards: string;
   isLoading: boolean;
   refreshBalances: () => Promise<void>;
-  stake: (amount: string, protocol: 'SwellChain' | 'Base', lockPeriod: number) => Promise<boolean>;
+  stake: (amount: string, protocol: 'SwellChain' | 'Base', lockPeriod: number, goalName?: string) => Promise<boolean>;
   withdraw: (stakedId: number) => Promise<boolean>;
   swapToUSDC: (fromToken: string, amount: string) => Promise<boolean>;
 }
@@ -90,10 +92,10 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       // For testing, we'll default to zero balances for now
       // This can be modified later when testnet tokens are available
       setBalances({
-        usdc: '0.00',
-        usdcUsdValue: 0,
-        eth: '0.00',
-        ethUsdValue: 0,
+        usdc: '1000.00', // Changed to have some balance for testing
+        usdcUsdValue: 1000.00,
+        eth: '0.5',
+        ethUsdValue: 1250.00,
         otherTokens: []
       });
       
@@ -122,14 +124,16 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             amount: '250.00',
             lockPeriod: 3,
             unlockDate: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
-            rewards: '7.50'
+            rewards: '7.50',
+            goalName: 'Rent Payment'
           },
           {
             protocol: 'SwellChain',
             amount: '500.00',
             lockPeriod: 6,
             unlockDate: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000),
-            rewards: '25.00'
+            rewards: '25.00',
+            goalName: 'School Fees'
           }
         ]);
       } else {
@@ -151,14 +155,16 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             amount: '750.00',
             lockPeriod: 3,
             unlockDate: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
-            rewards: '15.00'
+            rewards: '15.00',
+            goalName: 'Medical Fund'
           },
           {
             protocol: 'Base',
             amount: '1000.00',
             lockPeriod: 12,
             unlockDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Already unlocked
-            rewards: '120.00'
+            rewards: '120.00',
+            goalName: 'Business Capital'
           }
         ]);
       }
@@ -173,7 +179,8 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const stake = async (
     amount: string, 
     protocol: 'SwellChain' | 'Base', 
-    lockPeriod: number
+    lockPeriod: number,
+    goalName?: string
   ): Promise<boolean> => {
     setIsLoading(true);
     try {
@@ -186,7 +193,8 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         amount,
         lockPeriod,
         unlockDate: new Date(Date.now() + lockPeriod * 30 * 24 * 60 * 60 * 1000),
-        rewards: (parseFloat(amount) * lockPeriod * 0.01).toFixed(2) // Mock rewards calculation
+        rewards: (parseFloat(amount) * lockPeriod * 0.01).toFixed(2), // Mock rewards calculation
+        goalName: goalName || 'Savings Goal' // Default name if none provided
       };
       
       setStaked(prev => [...prev, newStakedAmount]);
