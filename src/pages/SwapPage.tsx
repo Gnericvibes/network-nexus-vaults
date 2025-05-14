@@ -11,7 +11,7 @@ import ChainSwitcher from '@/components/dashboard/ChainSwitcher';
 import { useWallet } from '@/contexts/WalletContext';
 import { useChain } from '@/contexts/ChainContext';
 import { useTransactions } from '@/contexts/TransactionContext';
-import { ArrowLeft, ArrowDownUp, DollarSign, Exchange, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowDownUp, DollarSign, ArrowRight } from 'lucide-react';
 
 const SwapPage: React.FC = () => {
   const [fromToken, setFromToken] = useState('ETH');
@@ -333,7 +333,7 @@ const SwapPage: React.FC = () => {
               
               <CardFooter className="bg-muted/50 flex flex-col items-start gap-4 text-sm">
                 <div className="flex items-start gap-2">
-                  <Exchange className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <ArrowRight className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <p>
                     Swap your existing tokens to USDC for use in our savings programs.
                   </p>
