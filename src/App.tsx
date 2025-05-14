@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -69,59 +70,123 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppRoutes = () => (
-  <Routes>
-    {/* Public Routes */}
-    <Route path="/" element={<Index />} />
-    <Route path="/landing" element={<Landing />} />
-    <Route path="/auth" element={
-      <PublicRoute>
-        <Auth />
-      </PublicRoute>
-    } />
-    
-    {/* Protected Routes */}
-    <Route path="/dashboard" element={
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
-    } />
-    <Route path="/stake" element={
-      <ProtectedRoute>
-        <StakePage />
-      </ProtectedRoute>
-    } />
-    <Route path="/withdraw" element={
-      <ProtectedRoute>
-        <WithdrawPage />
-      </ProtectedRoute>
-    } />
-    <Route path="/fiat" element={
-      <ProtectedRoute>
-        <FiatPage />
-      </ProtectedRoute>
-    } />
-    <Route path="/history" element={
-      <ProtectedRoute>
-        <HistoryPage />
-      </ProtectedRoute>
-    } />
-    <Route path="/settings" element={
-      <ProtectedRoute>
-        <SettingsPage />
-      </ProtectedRoute>
-    } />
-    <Route path="/profile" element={
-      <ProtectedRoute>
-        <ProfilePage />
-      </ProtectedRoute>
-    } />
-    <Route path="/swap" element={<ProtectedRoute><SwapPage /></ProtectedRoute>} />
-    
-    {/* Catch-all route */}
-    <Route path="*" element={<NotFound />} />
-  </Routes>
-);
+// AppRoutes with proper context provider wrapping
+const AppRoutes = () => {
+  const { isAuthenticated } = usePrivyAuth();
+  
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<Index />} />
+      <Route path="/landing" element={<Landing />} />
+      <Route path="/auth" element={
+        <PublicRoute>
+          <Auth />
+        </PublicRoute>
+      } />
+      
+      {/* Protected Routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <ChainProvider>
+            <WalletProvider>
+              <TransactionProvider>
+                <Dashboard />
+              </TransactionProvider>
+            </WalletProvider>
+          </ChainProvider>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/stake" element={
+        <ProtectedRoute>
+          <ChainProvider>
+            <WalletProvider>
+              <TransactionProvider>
+                <StakePage />
+              </TransactionProvider>
+            </WalletProvider>
+          </ChainProvider>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/withdraw" element={
+        <ProtectedRoute>
+          <ChainProvider>
+            <WalletProvider>
+              <TransactionProvider>
+                <WithdrawPage />
+              </TransactionProvider>
+            </WalletProvider>
+          </ChainProvider>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/fiat" element={
+        <ProtectedRoute>
+          <ChainProvider>
+            <WalletProvider>
+              <TransactionProvider>
+                <FiatPage />
+              </TransactionProvider>
+            </WalletProvider>
+          </ChainProvider>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/history" element={
+        <ProtectedRoute>
+          <ChainProvider>
+            <WalletProvider>
+              <TransactionProvider>
+                <HistoryPage />
+              </TransactionProvider>
+            </WalletProvider>
+          </ChainProvider>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <ChainProvider>
+            <WalletProvider>
+              <TransactionProvider>
+                <SettingsPage />
+              </TransactionProvider>
+            </WalletProvider>
+          </ChainProvider>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <ChainProvider>
+            <WalletProvider>
+              <TransactionProvider>
+                <ProfilePage />
+              </TransactionProvider>
+            </WalletProvider>
+          </ChainProvider>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/swap" element={
+        <ProtectedRoute>
+          <ChainProvider>
+            <WalletProvider>
+              <TransactionProvider>
+                <SwapPage />
+              </TransactionProvider>
+            </WalletProvider>
+          </ChainProvider>
+        </ProtectedRoute>
+      } />
+      
+      {/* Catch-all route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 // Use refactored providers with correct nesting order
 const AppWithProviders = () => (
@@ -129,13 +194,7 @@ const AppWithProviders = () => (
     <PrivyConfigProvider>
       <PrivyAuthProvider>
         <AuthProvider>
-          <ChainProvider>
-            <WalletProvider>
-              <TransactionProvider>
-                <AppRoutes />
-              </TransactionProvider>
-            </WalletProvider>
-          </ChainProvider>
+          <AppRoutes />
         </AuthProvider>
       </PrivyAuthProvider>
     </PrivyConfigProvider>

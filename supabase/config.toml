@@ -1,1 +1,5 @@
+
 project_id = "kdukcovdmvuijjvprgzp"
+
+[auth.anonymous]
+enabled = true
