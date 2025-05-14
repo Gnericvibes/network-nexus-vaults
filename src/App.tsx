@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +21,7 @@ import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import ProfilePage from "./pages/ProfilePage";
+import SwapPage from "./pages/SwapPage";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +116,7 @@ const AppRoutes = () => (
         <ProfilePage />
       </ProtectedRoute>
     } />
+    <Route path="/swap" element={<ProtectedRoute><SwapPage /></ProtectedRoute>} />
     
     {/* Catch-all route */}
     <Route path="*" element={<NotFound />} />

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useChain } from './ChainContext';
@@ -21,6 +20,9 @@ interface WalletContextType {
   balances: {
     usdc: string;
     usdcUsdValue: number;
+    eth: string;
+    ethUsdValue: number;
+    otherTokens: TokenBalance[];
   };
   staked: StakedAmount[];
   totalStaked: string;
@@ -29,6 +31,7 @@ interface WalletContextType {
   refreshBalances: () => Promise<void>;
   stake: (amount: string, protocol: 'SwellChain' | 'Base', lockPeriod: number) => Promise<boolean>;
   withdraw: (stakedId: number) => Promise<boolean>;
+  swapToUSDC: (fromToken: string, amount: string) => Promise<boolean>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -36,7 +39,13 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { currentChain } = useChain();
-  const [balances, setBalances] = useState({ usdc: '0.00', usdcUsdValue: 0 });
+  const [balances, setBalances] = useState({ 
+    usdc: '0.00', 
+    usdcUsdValue: 0,
+    eth: '0.00',
+    ethUsdValue: 0,
+    otherTokens: [] as TokenBalance[]
+  });
   const [staked, setStaked] = useState<StakedAmount[]>([]);
   const [totalStaked, setTotalStaked] = useState('0.00');
   const [totalRewards, setTotalRewards] = useState('0.00');
@@ -82,7 +91,10 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       // This can be modified later when testnet tokens are available
       setBalances({
         usdc: '0.00',
-        usdcUsdValue: 0
+        usdcUsdValue: 0,
+        eth: '0.00',
+        ethUsdValue: 0,
+        otherTokens: []
       });
       
       // Default to empty staked positions for initial testing
@@ -94,7 +106,13 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         // Fetch balances for Ethereum chain
         setBalances({
           usdc: '1000.00',
-          usdcUsdValue: 1000.00
+          usdcUsdValue: 1000.00,
+          eth: '0.5',
+          ethUsdValue: 1250.00,
+          otherTokens: [
+            { symbol: 'LINK', balance: '10.00', usdValue: 125.00 },
+            { symbol: 'UNI', balance: '5.00', usdValue: 60.00 }
+          ]
         });
         
         // Fetch staked amounts
@@ -118,7 +136,12 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         // Fetch balances for Base chain
         setBalances({
           usdc: '2000.00',
-          usdcUsdValue: 2000.00
+          usdcUsdValue: 2000.00,
+          eth: '0.2',
+          ethUsdValue: 500.00,
+          otherTokens: [
+            { symbol: 'DAI', balance: '500.00', usdValue: 500.00 }
+          ]
         });
         
         // Fetch staked amounts
@@ -214,6 +237,64 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
+  const swapToUSDC = async (fromToken: string, amount: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      // Mock swap transaction
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const amountToSwap = parseFloat(amount);
+      let usdcReceived = '0.00';
+      let usdcUsdValue = 0;
+      
+      // Simulated swap rates
+      if (fromToken === 'ETH') {
+        // Assuming 1 ETH = $2500
+        usdcReceived = (amountToSwap * 2500).toFixed(2);
+        usdcUsdValue = amountToSwap * 2500;
+        
+        // Update ETH balance
+        setBalances(prev => ({
+          ...prev,
+          eth: (parseFloat(prev.eth) - amountToSwap).toFixed(2),
+          ethUsdValue: prev.ethUsdValue - (amountToSwap * 2500),
+          usdc: (parseFloat(prev.usdc) + parseFloat(usdcReceived)).toFixed(2),
+          usdcUsdValue: prev.usdcUsdValue + parseFloat(usdcReceived)
+        }));
+      } else {
+        // For other tokens, find them in the otherTokens array
+        const tokenIndex = balances.otherTokens.findIndex(t => t.symbol === fromToken);
+        if (tokenIndex >= 0) {
+          const token = balances.otherTokens[tokenIndex];
+          usdcReceived = amountToSwap.toFixed(2); // Assuming 1:1 for simplicity
+          usdcUsdValue = amountToSwap;
+          
+          // Update token balance
+          const updatedTokens = [...balances.otherTokens];
+          updatedTokens[tokenIndex] = {
+            ...token,
+            balance: (parseFloat(token.balance) - amountToSwap).toFixed(2),
+            usdValue: token.usdValue - amountToSwap
+          };
+          
+          setBalances(prev => ({
+            ...prev,
+            otherTokens: updatedTokens,
+            usdc: (parseFloat(prev.usdc) + parseFloat(usdcReceived)).toFixed(2),
+            usdcUsdValue: prev.usdcUsdValue + parseFloat(usdcReceived)
+          }));
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Swap failed:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <WalletContext.Provider value={{ 
       balances,
@@ -223,7 +304,8 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       isLoading,
       refreshBalances,
       stake,
-      withdraw
+      withdraw,
+      swapToUSDC
     }}>
       {children}
     </WalletContext.Provider>

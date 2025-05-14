@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +9,7 @@ import { useWallet } from '@/contexts/WalletContext';
 import { useChain } from '@/contexts/ChainContext';
 import { useToast } from '@/components/ui/use-toast';
 import { useTransactions } from '@/contexts/TransactionContext';
-import { ArrowUp, ArrowDown, RefreshCw, Wallet, StepForward, LineChart } from 'lucide-react';
+import { ArrowUp, ArrowDown, RefreshCw, Wallet, StepForward, LineChart, Exchange } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -147,6 +146,15 @@ const Dashboard: React.FC = () => {
             className="flex-1 sm:flex-none"
           >
             On-Ramp/Off-Ramp
+          </Button>
+          
+          <Button 
+            variant="secondary"
+            onClick={() => navigate('/swap')}
+            className="w-full"
+          >
+            <Exchange className="h-4 w-4 mr-2" />
+            Swap to USDC
           </Button>
         </div>
         
