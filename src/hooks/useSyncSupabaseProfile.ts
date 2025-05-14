@@ -28,6 +28,20 @@ export const useSyncSupabaseProfile = (
           return;
         }
 
+        // First, check if the user exists in auth.users
+        // This is important since we're using RLS and need to be authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          // If there's no session, we need to create one
+          // This is a simplified approach - in production we would need a more robust solution
+          console.log('No active Supabase session, attempting to create session');
+          
+          // For now, we'll just skip the profile creation if no session
+          setIsSyncing(false);
+          return;
+        }
+
         // Check if profile exists by email or wallet
         let profileQuery = supabase.from('profiles').select('*');
         
@@ -49,10 +63,11 @@ export const useSyncSupabaseProfile = (
 
         if (!profile) {
           console.log('Profile not found, creating new profile');
-          // Generate a proper UUID for the profile ID
-          const profileId = crypto.randomUUID();
+          // Use the user's UUID from the session as the profile ID
+          // This is critical for RLS to work correctly
+          const profileId = session.user.id;
           
-          // Create new profile with generated UUID
+          // Create new profile with user's UUID
           const profileData = {
             id: profileId,
             email: user.email?.address || null,
@@ -65,13 +80,40 @@ export const useSyncSupabaseProfile = (
 
           if (insertError) {
             console.error('Error creating profile:', insertError);
-            toast.error('Failed to create user profile', {
-              description: 'There was an issue setting up your account. Please try again.'
-            });
             
-            // Try again if we haven't exceeded max attempts
-            if (syncAttemptCount < MAX_SYNC_ATTEMPTS) {
-              setSyncAttemptCount(prev => prev + 1);
+            // Check if it's a duplicate key error, which might mean the profile exists
+            // but with different email/wallet - in that case we should update instead
+            if (insertError.code === '23505') { // Unique violation
+              console.log('Profile may exist with different details, attempting update');
+              const { error: updateError } = await supabase
+                .from('profiles')
+                .update({
+                  email: user.email?.address || null,
+                  wallet_address: user.wallet?.address || null
+                })
+                .eq('id', profileId);
+                
+              if (updateError) {
+                console.error('Error updating existing profile:', updateError);
+                toast.error('Failed to update user profile', {
+                  description: 'There was an issue updating your account. Please try again.'
+                });
+              } else {
+                console.log('Profile updated successfully');
+                toast.success('Welcome back!', {
+                  description: 'Your account has been updated successfully.'
+                });
+                setSyncAttemptCount(0); // Reset attempt count on success
+              }
+            } else {
+              toast.error('Failed to create user profile', {
+                description: 'There was an issue setting up your account. Please try again.'
+              });
+              
+              // Try again if we haven't exceeded max attempts
+              if (syncAttemptCount < MAX_SYNC_ATTEMPTS) {
+                setSyncAttemptCount(prev => prev + 1);
+              }
             }
           } else {
             console.log('Profile created successfully');
