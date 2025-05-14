@@ -7,7 +7,8 @@ export type TransactionType =
   | 'stake' 
   | 'unstake' 
   | 'on-ramp' 
-  | 'off-ramp';
+  | 'off-ramp'
+  | 'swap';  // Added 'swap' as a valid transaction type
 
 export type TransactionStatus = 
   | 'pending' 

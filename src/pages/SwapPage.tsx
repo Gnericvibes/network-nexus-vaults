@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -131,7 +130,7 @@ const SwapPage: React.FC = () => {
         });
         
         addTransaction({
-          type: 'swap',
+          type: 'swap', // Now this is a valid TransactionType
           amount: fromAmount,
           status: 'completed',
           chain: currentChain,
