@@ -455,7 +455,7 @@ const StakePage: React.FC = () => {
                       disabled={isSubmitting || !amount || parseFloat(amount) <= 0 || !goalName}
                       className="w-full md:w-auto"
                     >
-                      {isSubmitting ? 'Processing...' : 'Create Savings Goal'}
+                      {isSubmitting ? 'Processing...' : 'Stake'}
                     </Button>
                   </div>
                 </form>
