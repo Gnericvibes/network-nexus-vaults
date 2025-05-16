@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useChain } from './ChainContext';
@@ -89,23 +88,9 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       // Mock API call to fetch balances
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // For testing, we'll default to zero balances for now
-      // This can be modified later when testnet tokens are available
-      setBalances({
-        usdc: '1000.00', // Changed to have some balance for testing
-        usdcUsdValue: 1000.00,
-        eth: '0.5',
-        ethUsdValue: 1250.00,
-        otherTokens: []
-      });
-      
-      // Default to empty staked positions for initial testing
-      setStaked([]);
-      
-      // Uncomment the below code when you want to show mock data for testing UI
-      /*
+      // Set default test balances based on the chain
       if (currentChain === 'ethereum') {
-        // Fetch balances for Ethereum chain
+        // Fetch balances for Ethereum testnet
         setBalances({
           usdc: '1000.00',
           usdcUsdValue: 1000.00,
@@ -117,27 +102,22 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           ]
         });
         
-        // Fetch staked amounts
-        setStaked([
-          {
-            protocol: 'SwellChain',
-            amount: '250.00',
-            lockPeriod: 3,
-            unlockDate: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
-            rewards: '7.50',
-            goalName: 'Rent Payment'
-          },
-          {
-            protocol: 'SwellChain',
-            amount: '500.00',
-            lockPeriod: 6,
-            unlockDate: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000),
-            rewards: '25.00',
-            goalName: 'School Fees'
-          }
-        ]);
+        // Fetch existing staked amounts if any
+        if (staked.length === 0) {
+          // Only set default staked positions when there are none (for demo purposes)
+          setStaked([
+            {
+              protocol: 'SwellChain',
+              amount: '250.00',
+              lockPeriod: 3,
+              unlockDate: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
+              rewards: '7.50',
+              goalName: 'Rent Payment'
+            }
+          ]);
+        }
       } else {
-        // Fetch balances for Base chain
+        // Fetch balances for Base testnet
         setBalances({
           usdc: '2000.00',
           usdcUsdValue: 2000.00,
@@ -148,27 +128,21 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           ]
         });
         
-        // Fetch staked amounts
-        setStaked([
-          {
-            protocol: 'Base',
-            amount: '750.00',
-            lockPeriod: 3,
-            unlockDate: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
-            rewards: '15.00',
-            goalName: 'Medical Fund'
-          },
-          {
-            protocol: 'Base',
-            amount: '1000.00',
-            lockPeriod: 12,
-            unlockDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Already unlocked
-            rewards: '120.00',
-            goalName: 'Business Capital'
-          }
-        ]);
+        // Fetch existing staked amounts if any
+        if (staked.length === 0) {
+          // Only set default staked positions when there are none (for demo purposes)
+          setStaked([
+            {
+              protocol: 'Base',
+              amount: '750.00',
+              lockPeriod: 3,
+              unlockDate: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
+              rewards: '15.00',
+              goalName: 'Medical Fund'
+            }
+          ]);
+        }
       }
-      */
     } catch (error) {
       console.error('Failed to refresh balances:', error);
     } finally {

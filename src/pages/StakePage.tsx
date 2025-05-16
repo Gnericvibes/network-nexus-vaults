@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/components/ui/use-toast';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -289,9 +287,9 @@ const StakePage: React.FC = () => {
         
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold gradient-text">Create Savings Goal</h1>
+            <h1 className="text-3xl font-bold gradient-text">Create Staking</h1>
             <p className="text-muted-foreground mt-1">
-              Set your savings goal, amount, and lock period
+              Set your staking amount and lock period
             </p>
           </div>
           
@@ -302,7 +300,7 @@ const StakePage: React.FC = () => {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Create Savings Goal</CardTitle>
+                <CardTitle>Create Staking</CardTitle>
                 <CardDescription>
                   Choose your goal, staking amount and lock period to start earning rewards
                 </CardDescription>

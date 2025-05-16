@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -81,7 +82,7 @@ const Dashboard: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold gradient-text">Dashboard</h1>
             <p className="text-muted-foreground mt-1">
-              Manage your savings and view your staking performance
+              Manage your staking positions and view your rewards
             </p>
           </div>
           
@@ -128,7 +129,7 @@ const Dashboard: React.FC = () => {
             className="flex-1 sm:flex-none"
           >
             <ArrowUp className="h-4 w-4 mr-2" />
-            Save Now
+            Stake Now
           </Button>
           
           <Button 
@@ -178,6 +179,7 @@ const Dashboard: React.FC = () => {
                   rewards={item.rewards}
                   lockPeriod={item.lockPeriod}
                   unlockDate={item.unlockDate}
+                  goalName={item.goalName}
                   onWithdraw={() => handleWithdraw(index)}
                 />
               ))}
