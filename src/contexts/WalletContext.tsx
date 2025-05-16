@@ -31,7 +31,7 @@ interface WalletContextType {
   isLoading: boolean;
   refreshBalances: () => Promise<void>;
   stake: (amount: string, protocol: 'SwellChain' | 'Base', lockPeriod: number, goalName?: string) => Promise<boolean>;
-  withdraw: (stakedId: number) => Promise<boolean>;
+  withdraw: (stakedId: number, isEarlyWithdraw?: boolean) => Promise<boolean>;
   swapToUSDC: (fromToken: string, amount: string) => Promise<boolean>;
 }
 
@@ -113,6 +113,14 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               unlockDate: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
               rewards: '7.50',
               goalName: 'Rent Payment'
+            },
+            {
+              protocol: 'SwellChain',
+              amount: '100.00',
+              lockPeriod: 1,
+              unlockDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // Already unlocked
+              rewards: '1.00',
+              goalName: 'Emergency Fund'
             }
           ]);
         }
@@ -139,6 +147,14 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               unlockDate: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
               rewards: '15.00',
               goalName: 'Medical Fund'
+            },
+            {
+              protocol: 'Base',
+              amount: '300.00',
+              lockPeriod: 6,
+              unlockDate: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000),
+              rewards: '9.00',
+              goalName: 'Business Capital'
             }
           ]);
         }
@@ -189,7 +205,7 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
-  const withdraw = async (stakedId: number): Promise<boolean> => {
+  const withdraw = async (stakedId: number, isEarlyWithdraw: boolean = false): Promise<boolean> => {
     setIsLoading(true);
     try {
       // Mock withdrawal transaction
@@ -199,8 +215,17 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const stakedAmount = staked[stakedId];
       if (!stakedAmount) return false;
       
+      // Calculate withdrawal amount
+      let withdrawalAmount = parseFloat(stakedAmount.amount);
+      const rewardsAmount = isEarlyWithdraw ? 0 : parseFloat(stakedAmount.rewards);
+      
+      // Apply early withdrawal fee if applicable
+      if (isEarlyWithdraw) {
+        withdrawalAmount = withdrawalAmount * 0.7; // 30% fee
+      }
+      
       // Update balance
-      const totalAmount = parseFloat(stakedAmount.amount) + parseFloat(stakedAmount.rewards);
+      const totalAmount = withdrawalAmount + rewardsAmount;
       setBalances(prev => ({
         ...prev,
         usdc: (parseFloat(prev.usdc) + totalAmount).toFixed(2),

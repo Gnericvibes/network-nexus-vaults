@@ -81,7 +81,9 @@ const StakedItemCard: React.FC<StakedItemCardProps> = ({
           
           <div>
             <div className="text-lg font-semibold text-app-green">+${rewards}</div>
-            <p className="text-xs text-muted-foreground">Earned Rewards</p>
+            <p className="text-xs text-muted-foreground">
+              {isUnlocked ? 'Earned Rewards' : 'Est. Rewards'}
+            </p>
           </div>
           
           <div className="flex items-center text-sm text-app-gray">
@@ -94,10 +96,10 @@ const StakedItemCard: React.FC<StakedItemCardProps> = ({
       <CardFooter className="bg-gray-50 px-6 py-3">
         <Button
           className="w-full"
-          disabled={!isUnlocked}
+          variant={isUnlocked ? "default" : "secondary"}
           onClick={onWithdraw}
         >
-          {isUnlocked ? 'Withdraw' : 'Locked'}
+          {isUnlocked ? 'Withdraw' : 'Early Withdraw (30% Fee)'}
         </Button>
       </CardFooter>
     </Card>

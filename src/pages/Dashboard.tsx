@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from '@/components/layout/PageContainer';
@@ -11,6 +11,8 @@ import { useChain } from '@/contexts/ChainContext';
 import { useToast } from '@/components/ui/use-toast';
 import { useTransactions } from '@/contexts/TransactionContext';
 import { ArrowUp, ArrowDown, RefreshCw, Wallet, StepForward, LineChart, ArrowRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertTriangle, Info } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ const Dashboard: React.FC = () => {
   const { currentChain } = useChain();
   const { toast } = useToast();
   const { addTransaction } = useTransactions();
+  const [earlyWithdrawItem, setEarlyWithdrawItem] = useState<{index: number, item: any} | null>(null);
 
   useEffect(() => {
     refreshBalances();
@@ -49,21 +52,64 @@ const Dashboard: React.FC = () => {
 
   const handleWithdraw = async (index: number) => {
     const stakedItem = staked[index];
-    try {
-      const success = await withdraw(index);
-      if (success) {
+    const isUnlocked = new Date() >= stakedItem.unlockDate;
+
+    if (isUnlocked) {
+      try {
+        const success = await withdraw(index, false);
+        if (success) {
+          toast({
+            title: 'Withdrawal Successful',
+            description: `You have withdrawn $${stakedItem.amount} USDC + $${stakedItem.rewards} rewards`,
+          });
+          
+          addTransaction({
+            type: 'unstake',
+            amount: stakedItem.amount,
+            status: 'completed',
+            chain: currentChain,
+            protocol: stakedItem.protocol,
+            description: `Unlocked ${stakedItem.lockPeriod} month stake`
+          });
+        }
+      } catch (error) {
         toast({
-          title: 'Withdrawal Successful',
-          description: `You have withdrawn $${stakedItem.amount} USDC + $${stakedItem.rewards} rewards`,
+          title: 'Withdrawal Failed',
+          description: 'There was an error processing your withdrawal',
+          variant: 'destructive',
+        });
+      }
+    } else {
+      // Request early withdrawal
+      setEarlyWithdrawItem({
+        index,
+        item: stakedItem
+      });
+    }
+  };
+
+  const handleEarlyWithdrawConfirm = async () => {
+    if (!earlyWithdrawItem) return;
+    
+    try {
+      const success = await withdraw(earlyWithdrawItem.index, true);
+      
+      if (success) {
+        const fee = parseFloat(earlyWithdrawItem.item.amount) * 0.3;
+        const netAmount = parseFloat(earlyWithdrawItem.item.amount) - fee;
+        
+        toast({
+          title: 'Early Withdrawal Processed',
+          description: `You have withdrawn $${netAmount.toFixed(2)} USDC after $${fee.toFixed(2)} fee`,
         });
         
         addTransaction({
           type: 'unstake',
-          amount: stakedItem.amount,
+          amount: earlyWithdrawItem.item.amount,
           status: 'completed',
           chain: currentChain,
-          protocol: stakedItem.protocol,
-          description: `Unlocked ${stakedItem.lockPeriod} month stake`
+          protocol: earlyWithdrawItem.item.protocol,
+          description: `Early unstake with 30% fee (${earlyWithdrawItem.item.goalName || 'Savings Goal'})`
         });
       }
     } catch (error) {
@@ -73,6 +119,12 @@ const Dashboard: React.FC = () => {
         variant: 'destructive',
       });
     }
+    
+    setEarlyWithdrawItem(null);
+  };
+
+  const handleEarlyWithdrawCancel = () => {
+    setEarlyWithdrawItem(null);
   };
 
   return (
@@ -191,6 +243,64 @@ const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
+        
+        {/* Early withdrawal confirmation dialog */}
+        <Dialog open={!!earlyWithdrawItem} onOpenChange={(open) => {
+          if (!open) setEarlyWithdrawItem(null);
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Early Withdrawal</DialogTitle>
+              <DialogDescription>
+                You are about to withdraw your staked funds before the lock period ends.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {earlyWithdrawItem && (
+              <div className="py-4">
+                <div className="p-4 mb-4 bg-amber-50 dark:bg-amber-950/20 rounded-md">
+                  <div className="flex items-center gap-2 text-amber-600 mb-2">
+                    <AlertTriangle size={16} />
+                    <span className="font-medium">Early Withdrawal Fee</span>
+                  </div>
+                  <p className="text-sm text-amber-700/80 dark:text-amber-500/80">
+                    You will be charged a 30% fee on your staked amount for early withdrawal.
+                    This fee supports the Network Untop Network ecosystem.
+                  </p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Staked Amount:</span>
+                    <span className="font-medium">${earlyWithdrawItem.item.amount}</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Early Withdrawal Fee (30%):</span>
+                    <span className="font-medium text-destructive">-${(parseFloat(earlyWithdrawItem.item.amount) * 0.3).toFixed(2)}</span>
+                  </div>
+                  
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="font-medium">You will receive:</span>
+                    <span className="font-bold">${(parseFloat(earlyWithdrawItem.item.amount) * 0.7).toFixed(2)}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Info size={14} />
+                    <span>You will lose any accumulated rewards.</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={handleEarlyWithdrawCancel}>Cancel</Button>
+              <Button variant="destructive" onClick={handleEarlyWithdrawConfirm}>
+                Confirm Early Withdrawal
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageContainer>
   );
