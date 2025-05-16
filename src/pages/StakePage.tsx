@@ -535,7 +535,7 @@ const StakePage: React.FC = () => {
               <CardFooter className="bg-muted/50 flex items-start gap-2 text-sm">
                 <InfoIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <p>
-                  Staked USDC cannot be withdrawn until the lock period ends. Early withdrawal incurs a 5% penalty fee. Rewards are estimated and may vary based on protocol performance.
+                  Staked USDC cannot be withdrawn until the lock period ends. Early withdrawal incurs a 30% penalty fee. Rewards are estimated and may vary based on protocol performance.
                 </p>
               </CardFooter>
             </Card>
