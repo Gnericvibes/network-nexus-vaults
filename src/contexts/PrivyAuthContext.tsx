@@ -27,15 +27,14 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-  const [authInitialized, setAuthInitialized] = useState(false);
 
   // Sync with Supabase profile
   const { isSyncing, isComplete } = useSyncSupabaseProfile(authenticated, user);
 
-  // Initialize Supabase auth with Privy
+  // Initialize Supabase session
   useEffect(() => {
-    const initializeAuth = async () => {
-      if (!authenticated || !user || authInitialized) return;
+    const initializeSupabaseSession = async () => {
+      if (!authenticated || !user) return;
       
       try {
         // Check if we already have a session
@@ -46,31 +45,40 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
           return;
         }
         
-        // If no session exists, create an anonymous session
+        // If no session exists, we can't create an anonymous one as it's disabled
         if (!sessionData.session) {
-          console.log('No Supabase session found, creating anonymous session...');
-          const { data, error } = await supabase.auth.signInAnonymously();
+          console.log('No Supabase session found');
           
-          if (error) {
-            console.error('Error creating anonymous session:', error);
-            toast.error('Authentication Error', {
-              description: 'Failed to initialize your session.'
+          // Instead of anonymous sign in, we'll create a session using email if available
+          if (user.email?.address) {
+            const { error } = await supabase.auth.signInWithOtp({
+              email: user.email.address,
+              options: {
+                shouldCreateUser: true
+              }
             });
-          } else {
-            console.log('Anonymous session created successfully');
-            setAuthInitialized(true);
+            
+            if (error) {
+              console.error('Error creating session with OTP:', error);
+              toast.error('Authentication Error', {
+                description: 'Failed to initialize your session.'
+              });
+            } else {
+              console.log('Email OTP session created successfully');
+            }
           }
         } else {
           console.log('Existing Supabase session found');
-          setAuthInitialized(true);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
       }
     };
     
-    initializeAuth();
-  }, [authenticated, user, authInitialized]);
+    if (authenticated && user) {
+      initializeSupabaseSession();
+    }
+  }, [authenticated, user]);
 
   // Update loading state when Privy is ready
   useEffect(() => {
@@ -86,8 +94,6 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
       
       // Then sign out from Privy
       await privyLogout();
-      
-      setAuthInitialized(false);
       
       // Only navigate after logout
       navigate('/');

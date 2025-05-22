@@ -9,10 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Edit, Save, Loader2 } from 'lucide-react';
+import { User, Edit, Save, Loader2, RefreshCcw } from 'lucide-react';
 import BankAccountsList from '@/components/profile/BankAccountsList';
 import { toast } from 'sonner';
 
@@ -27,7 +26,6 @@ interface ProfileData {
 const ProfilePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast: uiToast } = useToast();
   const [profileData, setProfileData] = useState<ProfileData>({
     id: null,
     first_name: '',
@@ -103,7 +101,7 @@ const ProfilePage = () => {
         });
       } else {
         console.log("No profile found for user ID:", userId);
-        // Create a new profile
+        // Profile doesn't exist, create a new one
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({ id: userId })
@@ -124,7 +122,7 @@ const ProfilePage = () => {
         });
       }
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error('Unexpected error during profile fetch:', error);
       setFetchError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
@@ -195,7 +193,14 @@ const ProfilePage = () => {
       <PageContainer>
         <div className="flex flex-col items-center justify-center min-h-screen gap-4">
           <div className="text-xl text-red-500 font-medium">{fetchError}</div>
-          <Button onClick={() => fetchProfileData()}>Retry</Button>
+          <Button 
+            onClick={() => fetchProfileData()} 
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Retry
+          </Button>
         </div>
       </PageContainer>
     );
