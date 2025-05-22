@@ -10,6 +10,7 @@ export const useSyncSupabaseProfile = (
 ) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncAttemptCount, setSyncAttemptCount] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
   const MAX_SYNC_ATTEMPTS = 3;
 
   useEffect(() => {
@@ -25,20 +26,53 @@ export const useSyncSupabaseProfile = (
         
         if (!userIdentifier) {
           console.error('No user identifier available');
+          toast.error('Authentication Error', {
+            description: 'Could not identify your account.'
+          });
           return;
         }
 
-        // First, check if the user exists in auth.users
-        const { data: { session } } = await supabase.auth.getSession();
+        // First, check if the user exists in auth.users by trying to get session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
+        if (sessionError) {
+          console.error('Error getting session:', sessionError);
+          toast.error('Authentication Error', {
+            description: 'Could not verify your session.'
+          });
+          return;
+        }
+
         if (!session) {
-          console.log('No active Supabase session, attempting to create session');
-          setIsSyncing(false);
+          console.log('No active Supabase session, creating anonymous session');
+          
+          const { error: anonError } = await supabase.auth.signInAnonymously();
+          if (anonError) {
+            console.error('Failed to create anonymous session:', anonError);
+            toast.error('Authentication Error', {
+              description: 'Could not create a session for your account.'
+            });
+            return;
+          }
+          
+          // Get the new session
+          const { data: { session: newSession } } = await supabase.auth.getSession();
+          if (!newSession) {
+            console.error('Still no session after anonymous sign-in');
+            return;
+          }
+        }
+        
+        // Get the latest session again to ensure we have it
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        if (!currentSession) {
+          console.error('No session available after attempts to create one');
           return;
         }
 
         // Get the user ID from the session
-        const userId = session.user.id;
+        const userId = currentSession.user.id;
         if (!userId) {
           console.error('No user ID in session');
           return;
@@ -99,6 +133,7 @@ export const useSyncSupabaseProfile = (
                   description: 'Your account has been updated successfully.'
                 });
                 setSyncAttemptCount(0); // Reset attempt count on success
+                setIsComplete(true);
               }
             } else {
               toast.error('Failed to create user profile', {
@@ -116,6 +151,7 @@ export const useSyncSupabaseProfile = (
               description: 'Your account has been created successfully.'
             });
             setSyncAttemptCount(0); // Reset attempt count on success
+            setIsComplete(true);
           }
         } else {
           console.log('Profile found, checking for updates');
@@ -148,6 +184,8 @@ export const useSyncSupabaseProfile = (
               console.log('Profile updated successfully');
             }
           }
+          
+          setIsComplete(true);
         }
       } catch (error) {
         console.error('Sync error:', error);
@@ -159,16 +197,16 @@ export const useSyncSupabaseProfile = (
       }
     };
 
-    if (authenticated && user) {
+    if (authenticated && user && !isComplete) {
       syncWithSupabase();
     }
-  }, [authenticated, user, syncAttemptCount]);
+  }, [authenticated, user, syncAttemptCount, isComplete]);
 
   // Retry sync if needed based on attempt count
   useEffect(() => {
     let retryTimer: number;
     
-    if (syncAttemptCount > 0 && syncAttemptCount <= MAX_SYNC_ATTEMPTS && !isSyncing) {
+    if (syncAttemptCount > 0 && syncAttemptCount <= MAX_SYNC_ATTEMPTS && !isSyncing && !isComplete) {
       console.log(`Retrying sync attempt ${syncAttemptCount} of ${MAX_SYNC_ATTEMPTS}`);
       retryTimer = window.setTimeout(() => {
         // This will trigger the main useEffect again
@@ -178,7 +216,7 @@ export const useSyncSupabaseProfile = (
     return () => {
       if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [syncAttemptCount, isSyncing]);
+  }, [syncAttemptCount, isSyncing, isComplete]);
 
-  return { isSyncing };
+  return { isSyncing, isComplete };
 };

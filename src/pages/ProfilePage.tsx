@@ -39,27 +39,45 @@ const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchProfileData();
+    if (user?.isAuthenticated) {
+      fetchProfileData();
+    } else {
+      // Small delay to ensure auth state is properly checked
+      const timer = setTimeout(() => {
+        if (!user?.isAuthenticated) {
+          navigate('/auth');
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
   }, [user]);
 
   const fetchProfileData = async () => {
-    if (!user?.isAuthenticated) {
-      navigate('/auth');
-      return;
-    }
-
     try {
       setIsLoading(true);
+      setFetchError(null);
       
-      // First try to get the user's profile from Supabase session
-      const { data: sessionData } = await supabase.auth.getSession();
+      // First get the user's session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        setFetchError('Could not verify your session. Please log in again.');
+        return;
+      }
+      
       const userId = sessionData.session?.user?.id;
       
       if (!userId) {
-        throw new Error("No user ID found in session");
+        console.error("No user ID found in session");
+        setFetchError('No user session found. Please log in again.');
+        return;
       }
+      
+      console.log('Fetching profile for user ID:', userId);
       
       // Then query the profiles table using the user ID
       const { data, error } = await supabase
@@ -68,32 +86,63 @@ const ProfilePage = () => {
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        setFetchError('Failed to load profile data. Please try again later.');
+        return;
+      }
       
       if (data) {
+        console.log('Profile data retrieved:', data);
         setProfileData({
           id: data.id,
-          first_name: data.first_name,
-          last_name: data.last_name,
-          bio: data.bio,
-          avatar_url: data.avatar_url,
+          first_name: data.first_name || '',
+          last_name: data.last_name || '',
+          bio: data.bio || '',
+          avatar_url: data.avatar_url || '',
         });
       } else {
         console.log("No profile found for user ID:", userId);
+        // Create a new profile
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({ id: userId })
+          .select();
+          
+        if (insertError) {
+          console.error('Error creating new profile:', insertError);
+          setFetchError('Failed to create a profile. Please try again.');
+          return;
+        }
+        
+        setProfileData({
+          id: userId,
+          first_name: '',
+          last_name: '',
+          bio: '',
+          avatar_url: '',
+        });
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast.error('Failed to load profile data');
+      console.error('Unexpected error:', error);
+      setFetchError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSave = async () => {
-    if (!user?.isAuthenticated || !profileData.id) return;
+    if (!user?.isAuthenticated || !profileData.id) {
+      toast.error('Not authenticated', { 
+        description: 'Please log in to save your profile'
+      });
+      return;
+    }
 
     try {
       setIsSaving(true);
+      
+      console.log('Saving profile data:', profileData);
       
       const { error } = await supabase
         .from('profiles')
@@ -105,13 +154,21 @@ const ProfilePage = () => {
         })
         .eq('id', profileData.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating profile:', error);
+        toast.error('Failed to update profile', {
+          description: error.message
+        });
+        return;
+      }
 
       toast.success('Profile updated successfully');
       setIsEditing(false);
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      console.error('Error in save operation:', error);
+      toast.error('Failed to update profile', {
+        description: 'An unexpected error occurred'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -128,6 +185,17 @@ const ProfilePage = () => {
       <PageContainer>
         <div className="flex items-center justify-center min-h-screen">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </PageContainer>
+    );
+  }
+  
+  if (fetchError) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+          <div className="text-xl text-red-500 font-medium">{fetchError}</div>
+          <Button onClick={() => fetchProfileData()}>Retry</Button>
         </div>
       </PageContainer>
     );

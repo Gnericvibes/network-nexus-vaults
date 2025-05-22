@@ -30,7 +30,7 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [authInitialized, setAuthInitialized] = useState(false);
 
   // Sync with Supabase profile
-  const { isSyncing } = useSyncSupabaseProfile(authenticated, user);
+  const { isSyncing, isComplete } = useSyncSupabaseProfile(authenticated, user);
 
   // Initialize Supabase auth with Privy
   useEffect(() => {
@@ -38,14 +38,30 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
       if (!authenticated || !user || authInitialized) return;
       
       try {
-        // Create anonymous session in Supabase to allow RLS policies to work
-        // This is just a simple approach - in a production app, you'd want
-        // to implement a more robust auth solution that properly links Privy and Supabase
-        const { error } = await supabase.auth.signInAnonymously();
+        // Check if we already have a session
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('Error creating anonymous session:', error);
+        if (sessionError) {
+          console.error('Error checking session:', sessionError);
+          return;
+        }
+        
+        // If no session exists, create an anonymous session
+        if (!sessionData.session) {
+          console.log('No Supabase session found, creating anonymous session...');
+          const { data, error } = await supabase.auth.signInAnonymously();
+          
+          if (error) {
+            console.error('Error creating anonymous session:', error);
+            toast.error('Authentication Error', {
+              description: 'Failed to initialize your session.'
+            });
+          } else {
+            console.log('Anonymous session created successfully');
+            setAuthInitialized(true);
+          }
         } else {
+          console.log('Existing Supabase session found');
           setAuthInitialized(true);
         }
       } catch (error) {
@@ -58,10 +74,10 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   // Update loading state when Privy is ready
   useEffect(() => {
-    if (ready && !isSyncing) {
+    if (ready && !isSyncing && (isComplete || !authenticated)) {
       setIsLoading(false);
     }
-  }, [ready, isSyncing]);
+  }, [ready, isSyncing, isComplete, authenticated]);
 
   const logout = async () => {
     try {
