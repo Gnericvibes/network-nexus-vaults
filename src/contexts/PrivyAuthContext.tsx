@@ -37,6 +37,8 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
       if (!authenticated || !user) return;
       
       try {
+        console.log('Starting Supabase session initialization...');
+        
         // Check if we already have a session
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
@@ -50,44 +52,56 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
           console.log('No Supabase session found, attempting to authenticate with wallet');
           
           if (user.wallet?.address) {
-            // Using SignIn with the wallet address as the unique identifier
-            // This doesn't require the disabled email or anonymous methods
-            const { error } = await supabase.auth.signInWithPassword({
-              email: `${user.wallet.address.toLowerCase()}@wallet.user`,
-              password: `${user.wallet.address}-${process.env.VITE_PRIVY_APP_ID || 'privy'}`
+            // Generate a deterministic password for the wallet address
+            const walletEmail = `${user.wallet.address.toLowerCase()}@wallet.user`;
+            const walletPassword = `${user.wallet.address}-${process.env.VITE_PRIVY_APP_ID || 'privy'}`;
+            
+            console.log(`Using wallet-based credentials: ${walletEmail}`);
+            
+            // Try sign in first
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: walletEmail,
+              password: walletPassword
             });
             
-            // If the user doesn't exist, create them
-            if (error && error.message.includes('Invalid login credentials')) {
-              const { error: signUpError } = await supabase.auth.signUp({
-                email: `${user.wallet.address.toLowerCase()}@wallet.user`,
-                password: `${user.wallet.address}-${process.env.VITE_PRIVY_APP_ID || 'privy'}`
+            // If sign in fails because user doesn't exist, sign up
+            if (signInError && signInError.message.includes('Invalid login credentials')) {
+              console.log('User not found, creating new wallet-based user');
+              const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                email: walletEmail,
+                password: walletPassword
               });
               
               if (signUpError) {
                 console.error('Error creating wallet-based user:', signUpError);
                 toast.error('Authentication Error', {
-                  description: 'Failed to initialize your session.'
+                  description: 'Failed to create your account.'
                 });
               } else {
                 console.log('Wallet-based user created successfully');
               }
-            } else if (error) {
-              console.error('Error signing in with wallet:', error);
+            } else if (signInError) {
+              console.error('Error signing in with wallet:', signInError);
               toast.error('Authentication Error', {
-                description: 'Failed to initialize your session.'
+                description: 'Failed to authenticate. Please try again.'
               });
             } else {
               console.log('Wallet-based login successful');
             }
           } else {
             console.warn('No wallet address available to create session');
+            toast.error('Authentication Error', {
+              description: 'Wallet connection required. Please connect your wallet.'
+            });
           }
         } else {
-          console.log('Existing Supabase session found');
+          console.log('Existing Supabase session found:', sessionData.session.user.id);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
+        toast.error('Authentication Error', {
+          description: 'Failed to initialize session. Please try again.'
+        });
       }
     };
     
@@ -105,11 +119,15 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const logout = async () => {
     try {
+      console.log('Starting logout process...');
+      
       // First sign out from Supabase
       await supabase.auth.signOut();
+      console.log('Supabase signout completed');
       
       // Then sign out from Privy
       await privyLogout();
+      console.log('Privy logout completed');
       
       // Only navigate after logout
       navigate('/');

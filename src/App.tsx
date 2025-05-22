@@ -4,8 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { PrivyConfigProvider, PrivyAuthProvider, usePrivyAuth } from "@/contexts/PrivyAuthContext";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { PrivyConfigProvider, PrivyAuthProvider } from "@/contexts/PrivyAuthContext";
 import { ChainProvider } from "@/contexts/ChainContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { TransactionProvider } from "@/contexts/TransactionContext";
@@ -69,6 +68,9 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
   return <>{children}</>;
 };
+
+// Import inside the component to avoid the circular dependency
+import { usePrivyAuth } from "@/contexts/PrivyAuthContext";
 
 // AppRoutes with proper context provider wrapping
 const AppRoutes = () => {
@@ -193,9 +195,7 @@ const AppWithProviders = () => (
   <BrowserRouter>
     <PrivyConfigProvider>
       <PrivyAuthProvider>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
+        <AppRoutes />
       </PrivyAuthProvider>
     </PrivyConfigProvider>
   </BrowserRouter>

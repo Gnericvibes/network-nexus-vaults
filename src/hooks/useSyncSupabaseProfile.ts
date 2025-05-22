@@ -10,6 +10,7 @@ export const useSyncSupabaseProfile = (
 ) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const syncWithSupabase = async () => {
@@ -19,10 +20,11 @@ export const useSyncSupabaseProfile = (
       try {
         console.log('Attempting to sync Privy user to Supabase profile');
         
-        // Get user identifier - prioritize wallet address as email is disabled
-        const userIdentifier = user.wallet?.address || user.email?.address;
+        // Get user identifier - prioritize wallet address
+        const walletAddress = user.wallet?.address;
+        const emailAddress = user.email?.address;
         
-        if (!userIdentifier) {
+        if (!walletAddress && !emailAddress) {
           console.error('No user identifier available');
           toast.error('Authentication Error', {
             description: 'Could not identify your account.'
@@ -31,25 +33,40 @@ export const useSyncSupabaseProfile = (
           return;
         }
 
-        // Get current session - might be created from wallet-based auth
+        // Get current session - created via wallet-based auth in PrivyAuthContext
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error('Error getting session:', sessionError);
           setIsSyncing(false);
+          
+          // Retry a few times if session initialization is still in progress
+          if (retryCount < 3) {
+            setTimeout(() => {
+              setRetryCount(prev => prev + 1);
+              setIsComplete(false); // Reset to trigger another sync attempt
+            }, 2000);
+          }
           return;
         }
 
-        // If we have no session yet, we cannot sync the profile
+        // If we have no session yet, we need to wait for authentication to complete
         if (!session) {
           console.log('No active session, waiting for authentication to complete');
           setIsSyncing(false);
+          
+          // Retry a few times if session initialization is still in progress
+          if (retryCount < 3) {
+            setTimeout(() => {
+              setRetryCount(prev => prev + 1);
+              setIsComplete(false); // Reset to trigger another sync attempt
+            }, 2000);
+          }
           return;
         }
 
         // Get the user ID from the session
         const userId = session.user.id;
-        
         console.log('Current user ID from session:', userId);
         
         // Check if profile exists by user ID
@@ -74,8 +91,8 @@ export const useSyncSupabaseProfile = (
           
           const profileData = {
             id: userId,
-            email: user.email?.address || null,
-            wallet_address: user.wallet?.address || null
+            email: emailAddress,
+            wallet_address: walletAddress
           };
           
           const { error: insertError } = await supabase
@@ -99,13 +116,13 @@ export const useSyncSupabaseProfile = (
           const updates: any = {};
           let needsUpdate = false;
           
-          if (user.email?.address && existingProfile.email !== user.email.address) {
-            updates.email = user.email.address;
+          if (emailAddress && existingProfile.email !== emailAddress) {
+            updates.email = emailAddress;
             needsUpdate = true;
           }
           
-          if (user.wallet?.address && existingProfile.wallet_address !== user.wallet.address) {
-            updates.wallet_address = user.wallet.address;
+          if (walletAddress && existingProfile.wallet_address !== walletAddress) {
+            updates.wallet_address = walletAddress;
             needsUpdate = true;
           }
           
@@ -128,6 +145,7 @@ export const useSyncSupabaseProfile = (
         }
         
         setIsComplete(true);
+        setRetryCount(0); // Reset retry counter on success
       } catch (error) {
         console.error('Sync error:', error);
         toast.error('Profile Error', {
@@ -141,7 +159,7 @@ export const useSyncSupabaseProfile = (
     if (authenticated && user && !isComplete) {
       syncWithSupabase();
     }
-  }, [authenticated, user, isComplete]);
+  }, [authenticated, user, isComplete, retryCount]);
 
   return { isSyncing, isComplete };
 };
