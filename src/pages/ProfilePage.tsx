@@ -12,10 +12,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Edit, Save } from 'lucide-react';
+import { User, Edit, Save, Loader2 } from 'lucide-react';
 import BankAccountsList from '@/components/profile/BankAccountsList';
+import { toast } from 'sonner';
 
 interface ProfileData {
+  id: string | null;
   first_name: string | null;
   last_name: string | null;
   bio: string | null;
@@ -25,8 +27,9 @@ interface ProfileData {
 const ProfilePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const [profileData, setProfileData] = useState<ProfileData>({
+    id: null,
     first_name: '',
     last_name: '',
     bio: '',
@@ -34,6 +37,7 @@ const ProfilePage = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
 
   useEffect(() => {
@@ -47,32 +51,50 @@ const ProfilePage = () => {
     }
 
     try {
+      setIsLoading(true);
+      
+      // First try to get the user's profile from Supabase session
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      
+      if (!userId) {
+        throw new Error("No user ID found in session");
+      }
+      
+      // Then query the profiles table using the user ID
       const { data, error } = await supabase
         .from('profiles')
-        .select('first_name, last_name, bio, avatar_url')
-        .eq('email', user.email)
+        .select('id, first_name, last_name, bio, avatar_url')
+        .eq('id', userId)
         .maybeSingle();
 
       if (error) throw error;
+      
       if (data) {
-        setProfileData(data);
+        setProfileData({
+          id: data.id,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          bio: data.bio,
+          avatar_url: data.avatar_url,
+        });
+      } else {
+        console.log("No profile found for user ID:", userId);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load profile data',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load profile data');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSave = async () => {
-    if (!user?.isAuthenticated) return;
+    if (!user?.isAuthenticated || !profileData.id) return;
 
     try {
+      setIsSaving(true);
+      
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -81,22 +103,17 @@ const ProfilePage = () => {
           bio: profileData.bio,
           avatar_url: profileData.avatar_url,
         })
-        .eq('email', user.email);
+        .eq('id', profileData.id);
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'Profile updated successfully',
-      });
+      toast.success('Profile updated successfully');
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update profile',
-        variant: 'destructive',
-      });
+      toast.error('Failed to update profile');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -144,8 +161,14 @@ const ProfilePage = () => {
               variant={isEditing ? "default" : "outline"}
               onClick={() => isEditing ? handleSave() : setIsEditing(true)}
               className="mt-4 md:mt-0"
+              disabled={isSaving}
             >
-              {isEditing ? (
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : isEditing ? (
                 <>
                   <Save className="h-4 w-4 mr-2" />
                   Save Changes

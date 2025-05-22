@@ -29,29 +29,27 @@ export const useSyncSupabaseProfile = (
         }
 
         // First, check if the user exists in auth.users
-        // This is important since we're using RLS and need to be authenticated
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          // If there's no session, we need to create one
-          // This is a simplified approach - in production we would need a more robust solution
           console.log('No active Supabase session, attempting to create session');
-          
-          // For now, we'll just skip the profile creation if no session
           setIsSyncing(false);
           return;
         }
 
-        // Check if profile exists by email or wallet
-        let profileQuery = supabase.from('profiles').select('*');
-        
-        if (user.email?.address) {
-          profileQuery = profileQuery.eq('email', user.email.address);
-        } else if (user.wallet?.address) {
-          profileQuery = profileQuery.eq('wallet_address', user.wallet.address);
+        // Get the user ID from the session
+        const userId = session.user.id;
+        if (!userId) {
+          console.error('No user ID in session');
+          return;
         }
         
-        const { data: profile, error: fetchError } = await profileQuery.maybeSingle();
+        // Check if profile exists by user ID
+        const { data: profile, error: fetchError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
 
         if (fetchError) {
           console.error('Error fetching profile:', fetchError);
@@ -63,13 +61,10 @@ export const useSyncSupabaseProfile = (
 
         if (!profile) {
           console.log('Profile not found, creating new profile');
-          // Use the user's UUID from the session as the profile ID
-          // This is critical for RLS to work correctly
-          const profileId = session.user.id;
           
           // Create new profile with user's UUID
           const profileData = {
-            id: profileId,
+            id: userId,
             email: user.email?.address || null,
             wallet_address: user.wallet?.address || null
           };
@@ -91,7 +86,7 @@ export const useSyncSupabaseProfile = (
                   email: user.email?.address || null,
                   wallet_address: user.wallet?.address || null
                 })
-                .eq('id', profileId);
+                .eq('id', userId);
                 
               if (updateError) {
                 console.error('Error updating existing profile:', updateError);
