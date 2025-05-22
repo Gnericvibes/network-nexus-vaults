@@ -19,8 +19,8 @@ export const useSyncSupabaseProfile = (
       try {
         console.log('Attempting to sync Privy user to Supabase profile');
         
-        // Define user email identifier - use wallet address if email not available
-        const userIdentifier = user.email?.address || user.wallet?.address;
+        // Get user identifier - prioritize wallet address as email is disabled
+        const userIdentifier = user.wallet?.address || user.email?.address;
         
         if (!userIdentifier) {
           console.error('No user identifier available');
@@ -31,22 +31,26 @@ export const useSyncSupabaseProfile = (
           return;
         }
 
-        // Get the current session
+        // Get current session - might be created from wallet-based auth
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (sessionError || !session) {
-          console.error('Error getting session:', sessionError || 'No session found');
+        if (sessionError) {
+          console.error('Error getting session:', sessionError);
+          setIsSyncing(false);
+          return;
+        }
+
+        // If we have no session yet, we cannot sync the profile
+        if (!session) {
+          console.log('No active session, waiting for authentication to complete');
           setIsSyncing(false);
           return;
         }
 
         // Get the user ID from the session
         const userId = session.user.id;
-        if (!userId) {
-          console.error('No user ID in session');
-          setIsSyncing(false);
-          return;
-        }
+        
+        console.log('Current user ID from session:', userId);
         
         // Check if profile exists by user ID
         const { data: existingProfile, error: fetchError } = await supabase
@@ -57,8 +61,8 @@ export const useSyncSupabaseProfile = (
 
         if (fetchError) {
           console.error('Error fetching profile:', fetchError);
-          toast.error('Authentication Error', {
-            description: 'Could not verify your account.'
+          toast.error('Profile Error', {
+            description: 'Could not verify your profile.'
           });
           setIsSyncing(false);
           return;
@@ -80,17 +84,14 @@ export const useSyncSupabaseProfile = (
 
           if (insertError) {
             console.error('Error creating profile:', insertError);
-            toast.error('Failed to create user profile', {
-              description: 'There was an issue setting up your account. Please try again.'
+            toast.error('Profile Error', {
+              description: 'Failed to create your profile. Please try again.'
             });
             setIsSyncing(false);
             return;
           }
           
           console.log('Profile created successfully');
-          toast.success('Welcome!', {
-            description: 'Your account has been created successfully.'
-          });
         } else {
           console.log('Profile found:', existingProfile.id);
           
@@ -109,7 +110,7 @@ export const useSyncSupabaseProfile = (
           }
           
           if (needsUpdate) {
-            console.log('Updating profile with new data');
+            console.log('Updating profile with new data:', updates);
             const { error: updateError } = await supabase
               .from('profiles')
               .update(updates)
@@ -117,6 +118,9 @@ export const useSyncSupabaseProfile = (
               
             if (updateError) {
               console.error('Error updating profile:', updateError);
+              toast.error('Profile Error', {
+                description: 'Failed to update your profile.'
+              });
             } else {
               console.log('Profile updated successfully');
             }
@@ -126,8 +130,8 @@ export const useSyncSupabaseProfile = (
         setIsComplete(true);
       } catch (error) {
         console.error('Sync error:', error);
-        toast.error('Authentication Error', {
-          description: 'There was a problem syncing your account.'
+        toast.error('Profile Error', {
+          description: 'There was a problem syncing your profile.'
         });
       } finally {
         setIsSyncing(false);

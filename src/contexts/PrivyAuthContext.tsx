@@ -31,7 +31,7 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   // Sync with Supabase profile
   const { isSyncing, isComplete } = useSyncSupabaseProfile(authenticated, user);
 
-  // Initialize Supabase session
+  // Initialize Supabase session using wallet login instead of email or anonymous login
   useEffect(() => {
     const initializeSupabaseSession = async () => {
       if (!authenticated || !user) return;
@@ -45,27 +45,43 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
           return;
         }
         
-        // If no session exists, we can't create an anonymous one as it's disabled
+        // If no session exists, try to create one using a wallet-based authentication
         if (!sessionData.session) {
-          console.log('No Supabase session found');
+          console.log('No Supabase session found, attempting to authenticate with wallet');
           
-          // Instead of anonymous sign in, we'll create a session using email if available
-          if (user.email?.address) {
-            const { error } = await supabase.auth.signInWithOtp({
-              email: user.email.address,
-              options: {
-                shouldCreateUser: true
-              }
+          if (user.wallet?.address) {
+            // Using SignIn with the wallet address as the unique identifier
+            // This doesn't require the disabled email or anonymous methods
+            const { error } = await supabase.auth.signInWithPassword({
+              email: `${user.wallet.address.toLowerCase()}@wallet.user`,
+              password: `${user.wallet.address}-${process.env.VITE_PRIVY_APP_ID || 'privy'}`
             });
             
-            if (error) {
-              console.error('Error creating session with OTP:', error);
+            // If the user doesn't exist, create them
+            if (error && error.message.includes('Invalid login credentials')) {
+              const { error: signUpError } = await supabase.auth.signUp({
+                email: `${user.wallet.address.toLowerCase()}@wallet.user`,
+                password: `${user.wallet.address}-${process.env.VITE_PRIVY_APP_ID || 'privy'}`
+              });
+              
+              if (signUpError) {
+                console.error('Error creating wallet-based user:', signUpError);
+                toast.error('Authentication Error', {
+                  description: 'Failed to initialize your session.'
+                });
+              } else {
+                console.log('Wallet-based user created successfully');
+              }
+            } else if (error) {
+              console.error('Error signing in with wallet:', error);
               toast.error('Authentication Error', {
                 description: 'Failed to initialize your session.'
               });
             } else {
-              console.log('Email OTP session created successfully');
+              console.log('Wallet-based login successful');
             }
+          } else {
+            console.warn('No wallet address available to create session');
           }
         } else {
           console.log('Existing Supabase session found');
