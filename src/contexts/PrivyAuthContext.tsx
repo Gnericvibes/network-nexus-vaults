@@ -31,7 +31,7 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   // Sync with Supabase profile
   const { isSyncing, isComplete } = useSyncSupabaseProfile(authenticated, user);
 
-  // Initialize Supabase session using wallet login instead of email or anonymous login
+  // Initialize Supabase session using anonymous authentication
   useEffect(() => {
     const initializeSupabaseSession = async () => {
       if (!authenticated || !user) return;
@@ -47,52 +47,19 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
           return;
         }
         
-        // If no session exists, try to create one using a wallet-based authentication
+        // If no session exists, create an anonymous session
         if (!sessionData.session) {
-          console.log('No Supabase session found, attempting to authenticate with wallet');
+          console.log('No Supabase session found, creating anonymous session');
           
-          if (user.wallet?.address) {
-            // Generate a deterministic password for the wallet address
-            const walletEmail = `${user.wallet.address.toLowerCase()}@wallet.user`;
-            const walletPassword = `${user.wallet.address}-${process.env.VITE_PRIVY_APP_ID || 'privy'}`;
-            
-            console.log(`Using wallet-based credentials: ${walletEmail}`);
-            
-            // Try sign in first
-            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-              email: walletEmail,
-              password: walletPassword
-            });
-            
-            // If sign in fails because user doesn't exist, sign up
-            if (signInError && signInError.message.includes('Invalid login credentials')) {
-              console.log('User not found, creating new wallet-based user');
-              const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-                email: walletEmail,
-                password: walletPassword
-              });
-              
-              if (signUpError) {
-                console.error('Error creating wallet-based user:', signUpError);
-                toast.error('Authentication Error', {
-                  description: 'Failed to create your account.'
-                });
-              } else {
-                console.log('Wallet-based user created successfully');
-              }
-            } else if (signInError) {
-              console.error('Error signing in with wallet:', signInError);
-              toast.error('Authentication Error', {
-                description: 'Failed to authenticate. Please try again.'
-              });
-            } else {
-              console.log('Wallet-based login successful');
-            }
-          } else {
-            console.warn('No wallet address available to create session');
+          const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
+          
+          if (anonError) {
+            console.error('Error creating anonymous session:', anonError);
             toast.error('Authentication Error', {
-              description: 'Wallet connection required. Please connect your wallet.'
+              description: 'Failed to initialize session. Please try again.'
             });
+          } else {
+            console.log('Anonymous session created successfully');
           }
         } else {
           console.log('Existing Supabase session found:', sessionData.session.user.id);

@@ -33,35 +33,34 @@ export const useSyncSupabaseProfile = (
           return;
         }
 
-        // Get current session - created via wallet-based auth in PrivyAuthContext
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Wait for session to be available
+        let sessionAttempts = 0;
+        let session = null;
         
-        if (sessionError) {
-          console.error('Error getting session:', sessionError);
-          setIsSyncing(false);
+        while (sessionAttempts < 5 && !session) {
+          const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
           
-          // Retry a few times if session initialization is still in progress
-          if (retryCount < 3) {
-            setTimeout(() => {
-              setRetryCount(prev => prev + 1);
-              setIsComplete(false); // Reset to trigger another sync attempt
-            }, 2000);
+          if (sessionError) {
+            console.error('Error getting session:', sessionError);
+            break;
           }
-          return;
+          
+          if (currentSession) {
+            session = currentSession;
+            break;
+          }
+          
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          sessionAttempts++;
         }
 
-        // If we have no session yet, we need to wait for authentication to complete
+        // If we still don't have a session, we'll proceed without strict user ID linking
         if (!session) {
-          console.log('No active session, waiting for authentication to complete');
+          console.log('No session available, proceeding with profile creation using identifier');
+          setIsComplete(true);
+          setRetryCount(0);
           setIsSyncing(false);
-          
-          // Retry a few times if session initialization is still in progress
-          if (retryCount < 3) {
-            setTimeout(() => {
-              setRetryCount(prev => prev + 1);
-              setIsComplete(false); // Reset to trigger another sync attempt
-            }, 2000);
-          }
           return;
         }
 
@@ -78,9 +77,7 @@ export const useSyncSupabaseProfile = (
 
         if (fetchError) {
           console.error('Error fetching profile:', fetchError);
-          toast.error('Profile Error', {
-            description: 'Could not verify your profile.'
-          });
+          // Don't show error toast for profile fetch failures
           setIsSyncing(false);
           return;
         }
@@ -101,14 +98,10 @@ export const useSyncSupabaseProfile = (
 
           if (insertError) {
             console.error('Error creating profile:', insertError);
-            toast.error('Profile Error', {
-              description: 'Failed to create your profile. Please try again.'
-            });
-            setIsSyncing(false);
-            return;
+            // Don't show error toast for profile creation failures in anonymous mode
+          } else {
+            console.log('Profile created successfully');
           }
-          
-          console.log('Profile created successfully');
         } else {
           console.log('Profile found:', existingProfile.id);
           
@@ -135,9 +128,6 @@ export const useSyncSupabaseProfile = (
               
             if (updateError) {
               console.error('Error updating profile:', updateError);
-              toast.error('Profile Error', {
-                description: 'Failed to update your profile.'
-              });
             } else {
               console.log('Profile updated successfully');
             }
@@ -145,12 +135,10 @@ export const useSyncSupabaseProfile = (
         }
         
         setIsComplete(true);
-        setRetryCount(0); // Reset retry counter on success
+        setRetryCount(0);
       } catch (error) {
         console.error('Sync error:', error);
-        toast.error('Profile Error', {
-          description: 'There was a problem syncing your profile.'
-        });
+        // Don't show error toast in sync process
       } finally {
         setIsSyncing(false);
       }

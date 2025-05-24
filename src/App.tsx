@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +7,7 @@ import { PrivyConfigProvider, PrivyAuthProvider } from "@/contexts/PrivyAuthCont
 import { ChainProvider } from "@/contexts/ChainContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { TransactionProvider } from "@/contexts/TransactionContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Pages
 import Landing from "./pages/Landing";
@@ -195,7 +195,9 @@ const AppWithProviders = () => (
   <BrowserRouter>
     <PrivyConfigProvider>
       <PrivyAuthProvider>
-        <AppRoutes />
+        <ErrorBoundary>
+          <AppRoutes />
+        </ErrorBoundary>
       </PrivyAuthProvider>
     </PrivyConfigProvider>
   </BrowserRouter>
@@ -204,9 +206,11 @@ const AppWithProviders = () => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AppWithProviders />
+      <ErrorBoundary>
+        <Toaster />
+        <Sonner />
+        <AppWithProviders />
+      </ErrorBoundary>
     </TooltipProvider>
   </QueryClientProvider>
 );

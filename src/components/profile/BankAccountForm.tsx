@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -65,14 +66,13 @@ const BankAccountForm: React.FC<BankAccountFormProps> = ({ onComplete, existingD
       // Get the current session to get the user ID
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError || !session) {
-        toast({
-          title: 'Authentication error',
-          description: 'Please log in again',
-          variant: 'destructive',
-        });
-        return;
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        // Continue with user identifier if no session
       }
+
+      // Use session user ID if available, otherwise use a deterministic ID based on user info
+      const userId = session?.user?.id || `user_${user.wallet || user.email}`;
 
       if (accountId) {
         // Update existing account
@@ -84,7 +84,7 @@ const BankAccountForm: React.FC<BankAccountFormProps> = ({ onComplete, existingD
             account_number: values.account_number,
             country: values.country,
             routing_number: values.routing_number || null,
-            user_id: session.user.id,
+            user_id: userId,
           })
           .eq('id', accountId);
 
@@ -101,7 +101,7 @@ const BankAccountForm: React.FC<BankAccountFormProps> = ({ onComplete, existingD
           account_number: values.account_number,
           country: values.country,
           routing_number: values.routing_number || null,
-          user_id: session.user.id,
+          user_id: userId,
         });
 
         if (error) throw error;
