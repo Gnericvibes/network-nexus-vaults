@@ -38,9 +38,14 @@ export default defineConfig(({ command }) => ({
   },
   build: {
     commonjsOptions: {
-      include: [/bn\.js/, /node_modules/],
+      include: [/bn\.js/, /@ethersproject/, /node_modules/],
       transformMixedEsModules: true,
-      defaultIsModuleExports: 'auto',
+      defaultIsModuleExports: (id) => {
+        if (id.includes('bn.js')) {
+          return false;
+        }
+        return 'auto';
+      },
     },
     rollupOptions: {
       output: {
