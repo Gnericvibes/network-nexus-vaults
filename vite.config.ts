@@ -17,8 +17,6 @@ export default defineConfig(({ command }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Add specific alias for bn.js to ensure proper resolution
-      "bn.js": path.resolve(__dirname, "./node_modules/bn.js/lib/bn.js"),
     },
   },
   define: {
@@ -33,30 +31,21 @@ export default defineConfig(({ command }) => ({
       '@ethersproject/providers'
     ],
     esbuildOptions: {
-      // Define global for compatibility
       define: {
         global: 'globalThis',
       },
-      // Handle CommonJS modules properly
-      plugins: [],
     },
   },
   build: {
     commonjsOptions: {
       include: [/bn\.js/, /node_modules/],
       transformMixedEsModules: true,
-      // Specifically handle bn.js exports
-      namedExports: {
-        'bn.js': ['BN'],
-      },
     },
     rollupOptions: {
-      // Ensure external dependencies are handled correctly
-      external: [],
       output: {
-        // Handle global variables in the build
-        globals: {
-          'bn.js': 'BN',
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          crypto: ['bn.js', '@ethersproject/bignumber']
         },
       },
     },
