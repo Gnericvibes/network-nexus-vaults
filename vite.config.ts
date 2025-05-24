@@ -24,5 +24,17 @@ export default defineConfig(({ command }) => ({
   },
   optimizeDeps: {
     exclude: ['@privy-io/react-auth'],
+    include: [
+      'bn.js',
+      '@ethersproject/bignumber',
+      '@ethersproject/bytes',
+      '@ethersproject/providers'
+    ],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/bn\.js/, /node_modules/],
+      transformMixedEsModules: true,
+    },
   },
 }));
