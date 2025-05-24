@@ -23,9 +23,10 @@ export default defineConfig(({ command }) => ({
     global: 'globalThis',
   },
   optimizeDeps: {
-    exclude: ['@privy-io/react-auth', '@ethersproject/bignumber'],
+    exclude: ['@privy-io/react-auth'],
     include: [
       'bn.js',
+      '@ethersproject/bignumber',
       '@ethersproject/bytes',
       '@ethersproject/providers'
     ],
@@ -40,7 +41,12 @@ export default defineConfig(({ command }) => ({
       include: [/bn\.js/, /@ethersproject/, /node_modules/],
       transformMixedEsModules: true,
       defaultIsModuleExports: (id) => {
-        return id.includes('bn.js');
+        // Force bn.js to be treated as having default exports
+        if (id.includes('bn.js')) {
+          return true;
+        }
+        // Let other modules use their natural export style
+        return 'auto';
       },
     },
     rollupOptions: {
