@@ -31,52 +31,6 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   // Sync with Supabase profile
   const { isSyncing, isComplete } = useSyncSupabaseProfile(authenticated, user);
 
-  // Initialize Supabase session using anonymous authentication
-  useEffect(() => {
-    const initializeSupabaseSession = async () => {
-      if (!authenticated || !user) return;
-      
-      try {
-        console.log('Starting Supabase session initialization...');
-        
-        // Check if we already have a session
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Error checking session:', sessionError);
-          return;
-        }
-        
-        // If no session exists, create an anonymous session
-        if (!sessionData.session) {
-          console.log('No Supabase session found, creating anonymous session');
-          
-          const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
-          
-          if (anonError) {
-            console.error('Error creating anonymous session:', anonError);
-            toast.error('Authentication Error', {
-              description: 'Failed to initialize session. Please try again.'
-            });
-          } else {
-            console.log('Anonymous session created successfully');
-          }
-        } else {
-          console.log('Existing Supabase session found:', sessionData.session.user.id);
-        }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        toast.error('Authentication Error', {
-          description: 'Failed to initialize session. Please try again.'
-        });
-      }
-    };
-    
-    if (authenticated && user) {
-      initializeSupabaseSession();
-    }
-  }, [authenticated, user]);
-
   // Update loading state when Privy is ready
   useEffect(() => {
     if (ready && !isSyncing && (isComplete || !authenticated)) {
@@ -88,13 +42,17 @@ export const PrivyAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       console.log('Starting logout process...');
       
-      // First sign out from Supabase
-      await supabase.auth.signOut();
-      console.log('Supabase signout completed');
-      
-      // Then sign out from Privy
+      // Sign out from Privy first
       await privyLogout();
       console.log('Privy logout completed');
+      
+      // Then sign out from Supabase if there's a session
+      try {
+        await supabase.auth.signOut();
+        console.log('Supabase signout completed');
+      } catch (supabaseError) {
+        console.log('Supabase signout not needed or failed:', supabaseError);
+      }
       
       // Only navigate after logout
       navigate('/');

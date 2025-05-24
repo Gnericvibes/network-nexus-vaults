@@ -38,6 +38,11 @@ export const PrivyConfigProvider: React.FC<PrivyConfigProviderProps> = ({ childr
         embeddedWallets: {
           createOnLogin: 'users-without-wallets',
         },
+        // Add configuration to handle iframe issues
+        legal: {
+          termsAndConditionsUrl: 'https://your-terms-url.com',
+          privacyPolicyUrl: 'https://your-privacy-url.com',
+        },
       }}
     >
       {children}

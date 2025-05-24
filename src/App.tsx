@@ -23,7 +23,17 @@ import Index from "./pages/Index";
 import ProfilePage from "./pages/ProfilePage";
 import SwapPage from "./pages/SwapPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
+
+// Import inside the component to avoid circular dependency
+import { usePrivyAuth } from "@/contexts/PrivyAuthContext";
 
 // Protected route wrapper with improved handling
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -69,13 +79,8 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Import inside the component to avoid the circular dependency
-import { usePrivyAuth } from "@/contexts/PrivyAuthContext";
-
 // AppRoutes with proper context provider wrapping
 const AppRoutes = () => {
-  const { isAuthenticated } = usePrivyAuth();
-  
   return (
     <Routes>
       {/* Public Routes */}
