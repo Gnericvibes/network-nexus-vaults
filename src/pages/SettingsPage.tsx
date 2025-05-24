@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,14 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import PageContainer from '@/components/layout/PageContainer';
 import ChainSwitcher from '@/components/dashboard/ChainSwitcher';
-import { useAuth } from '@/contexts/AuthContext';
+import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
 import { ArrowLeft, Copy, Wallet, Check, Shield, Key, Lock } from 'lucide-react';
 
 const SettingsPage: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = usePrivyAuth();
 
   const copyToClipboard = () => {
     if (user?.wallet) {

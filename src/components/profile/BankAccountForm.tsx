@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -17,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
 
 const formSchema = z.object({
   bank_name: z.string().min(2, { message: 'Bank name must be at least 2 characters.' }),
@@ -37,7 +36,7 @@ interface BankAccountFormProps {
 
 const BankAccountForm: React.FC<BankAccountFormProps> = ({ onComplete, existingData, accountId }) => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = usePrivyAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<FormValues>({
@@ -52,7 +51,7 @@ const BankAccountForm: React.FC<BankAccountFormProps> = ({ onComplete, existingD
   });
 
   const onSubmit = async (values: FormValues) => {
-    if (!user?.isAuthenticated) {
+    if (!isAuthenticated || !user) {
       toast({
         title: 'Authentication required',
         description: 'Please log in to add a bank account',
@@ -63,6 +62,18 @@ const BankAccountForm: React.FC<BankAccountFormProps> = ({ onComplete, existingD
 
     setIsLoading(true);
     try {
+      // Get the current session to get the user ID
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast({
+          title: 'Authentication error',
+          description: 'Please log in again',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       if (accountId) {
         // Update existing account
         const { error } = await supabase
@@ -73,7 +84,7 @@ const BankAccountForm: React.FC<BankAccountFormProps> = ({ onComplete, existingD
             account_number: values.account_number,
             country: values.country,
             routing_number: values.routing_number || null,
-            user_id: user.email,
+            user_id: session.user.id,
           })
           .eq('id', accountId);
 
@@ -90,7 +101,7 @@ const BankAccountForm: React.FC<BankAccountFormProps> = ({ onComplete, existingD
           account_number: values.account_number,
           country: values.country,
           routing_number: values.routing_number || null,
-          user_id: user.email,
+          user_id: session.user.id,
         });
 
         if (error) throw error;

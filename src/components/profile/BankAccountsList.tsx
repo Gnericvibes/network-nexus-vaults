@@ -1,11 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
 import { Building, Edit, Trash2, PlusCircle } from 'lucide-react';
 import BankAccountForm from './BankAccountForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -22,7 +21,7 @@ interface BankAccount {
 }
 
 const BankAccountsList = () => {
-  const { user } = useAuth();
+  const { isAuthenticated } = usePrivyAuth();
   const { toast } = useToast();
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,14 +31,27 @@ const BankAccountsList = () => {
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
 
   const fetchAccounts = async () => {
-    if (!user?.isAuthenticated) return;
+    if (!isAuthenticated) return;
 
     try {
       setIsLoading(true);
+      
+      // Get the current session to get the user ID
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast({
+          title: 'Authentication error',
+          description: 'Please log in again',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { data, error } = await supabase
         .from('bank_accounts')
         .select('*')
-        .eq('user_id', user.email)
+        .eq('user_id', session.user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -58,7 +70,7 @@ const BankAccountsList = () => {
 
   useEffect(() => {
     fetchAccounts();
-  }, [user]);
+  }, [isAuthenticated]);
 
   const handleEditAccount = (account: BankAccount) => {
     setSelectedAccount(account);

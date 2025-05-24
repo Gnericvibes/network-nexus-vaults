@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth } from './AuthContext';
+import { usePrivyAuth } from './PrivyAuthContext';
 import { useChain } from './ChainContext';
 
 interface TokenBalance {
@@ -38,7 +38,7 @@ interface WalletContextType {
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = usePrivyAuth();
   const { currentChain } = useChain();
   const [balances, setBalances] = useState({ 
     usdc: '0.00', 
@@ -54,10 +54,10 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // Load wallet data when user or chain changes
   useEffect(() => {
-    if (user?.isAuthenticated) {
+    if (isAuthenticated) {
       refreshBalances();
     }
-  }, [user, currentChain]);
+  }, [isAuthenticated, currentChain]);
 
   // Calculate totals when staked amounts change
   useEffect(() => {

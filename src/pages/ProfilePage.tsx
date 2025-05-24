@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import PageContainer from '@/components/layout/PageContainer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +23,7 @@ interface ProfileData {
 }
 
 const ProfilePage = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = usePrivyAuth();
   const navigate = useNavigate();
   const [profileData, setProfileData] = useState<ProfileData>({
     id: null,
@@ -40,18 +39,18 @@ const ProfilePage = () => {
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.isAuthenticated) {
+    if (isAuthenticated) {
       fetchProfileData();
     } else {
       // Small delay to ensure auth state is properly checked
       const timer = setTimeout(() => {
-        if (!user?.isAuthenticated) {
+        if (!isAuthenticated) {
           navigate('/auth');
         }
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [user]);
+  }, [isAuthenticated]);
 
   const fetchProfileData = async () => {
     try {
@@ -130,7 +129,7 @@ const ProfilePage = () => {
   };
 
   const handleSave = async () => {
-    if (!user?.isAuthenticated || !profileData.id) {
+    if (!isAuthenticated || !profileData.id) {
       toast.error('Not authenticated', { 
         description: 'Please log in to save your profile'
       });
