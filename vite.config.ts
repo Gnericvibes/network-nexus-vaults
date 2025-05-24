@@ -40,6 +40,7 @@ export default defineConfig(({ command }) => ({
     commonjsOptions: {
       include: [/bn\.js/, /@ethersproject/, /node_modules/],
       transformMixedEsModules: true,
+      defaultIsModuleExports: true,
     },
     rollupOptions: {
       output: {
