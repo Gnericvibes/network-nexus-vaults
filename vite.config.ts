@@ -41,8 +41,9 @@ export default defineConfig(({ command }) => ({
       include: [/bn\.js/, /@ethersproject/, /node_modules/],
       transformMixedEsModules: true,
       defaultIsModuleExports: (id) => {
+        // For bn.js specifically, treat module.exports as default export
         if (id.includes('bn.js')) {
-          return false;
+          return true;
         }
         return 'auto';
       },
