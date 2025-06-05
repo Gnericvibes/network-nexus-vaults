@@ -96,17 +96,17 @@ const ProfilePage = () => {
         });
       } else {
         console.log('No existing profile found, creating new one');
-        // Create a new profile without strict typing to avoid id requirement
+        // Create a new profile - let Supabase handle the ID generation
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
-          .insert({
-            email: user.email || null,
-            wallet_address: user.wallet || null,
+          .insert([{
+            email: user.email,
+            wallet_address: user.wallet,
             first_name: null,
             last_name: null,
             bio: null,
             avatar_url: null,
-          })
+          }])
           .select()
           .single();
 
