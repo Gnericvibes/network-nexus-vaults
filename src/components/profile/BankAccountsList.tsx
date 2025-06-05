@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +22,7 @@ interface BankAccount {
 }
 
 const BankAccountsList = () => {
-  const { isAuthenticated } = usePrivyAuth();
+  const { isAuthenticated, user } = usePrivyAuth();
   const { toast } = useToast();
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,27 +32,47 @@ const BankAccountsList = () => {
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
 
   const fetchAccounts = async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user) return;
 
     try {
       setIsLoading(true);
       
-      // Get the current session to get the user ID
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Get the user's profile first to get the profile ID
+      const userIdentifier = user.email || user.wallet;
       
-      if (sessionError || !session) {
+      if (!userIdentifier) {
+        console.error('No user identifier found');
+        return;
+      }
+
+      // First get the profile ID
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .or(`email.eq.${user.email},wallet_address.eq.${user.wallet}`)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
         toast({
-          title: 'Authentication error',
-          description: 'Please log in again',
+          title: 'Error',
+          description: 'Failed to load your profile',
           variant: 'destructive',
         });
         return;
       }
 
+      if (!profile) {
+        console.log('No profile found, bank accounts will be empty');
+        setAccounts([]);
+        return;
+      }
+
+      // Now get bank accounts using the profile ID
       const { data, error } = await supabase
         .from('bank_accounts')
         .select('*')
-        .eq('user_id', session.user.id)
+        .eq('user_id', profile.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -70,7 +91,7 @@ const BankAccountsList = () => {
 
   useEffect(() => {
     fetchAccounts();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const handleEditAccount = (account: BankAccount) => {
     setSelectedAccount(account);

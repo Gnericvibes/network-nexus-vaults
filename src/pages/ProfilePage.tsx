@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
@@ -20,6 +21,8 @@ interface ProfileData {
   last_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  email: string | null;
+  wallet_address: string | null;
 }
 
 const ProfilePage = () => {
@@ -31,108 +34,112 @@ const ProfilePage = () => {
     last_name: '',
     bio: '',
     avatar_url: '',
+    email: '',
+    wallet_address: '',
   });
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
-  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchProfileData();
-    } else {
-      // Small delay to ensure auth state is properly checked
-      const timer = setTimeout(() => {
-        if (!isAuthenticated) {
-          navigate('/auth');
-        }
-      }, 500);
-      return () => clearTimeout(timer);
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
     }
-  }, [isAuthenticated]);
+    
+    if (user) {
+      fetchOrCreateProfile();
+    }
+  }, [isAuthenticated, user, navigate]);
 
-  const fetchProfileData = async () => {
+  const fetchOrCreateProfile = async () => {
+    if (!user) return;
+    
     try {
       setIsLoading(true);
-      setFetchError(null);
       
-      // First get the user's session
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      // Use the user's email or wallet address as the unique identifier
+      const userIdentifier = user.email || user.wallet;
       
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        setFetchError('Could not verify your session. Please log in again.');
+      if (!userIdentifier) {
+        console.error('No user identifier found');
+        toast.error('Unable to identify user. Please try logging in again.');
         return;
       }
+
+      console.log('Fetching profile for user:', userIdentifier);
       
-      const userId = sessionData.session?.user?.id;
-      
-      if (!userId) {
-        console.error("No user ID found in session");
-        setFetchError('No user session found. Please log in again.');
-        return;
-      }
-      
-      console.log('Fetching profile for user ID:', userId);
-      
-      // Then query the profiles table using the user ID
-      const { data, error } = await supabase
+      // Try to find existing profile by email or wallet address
+      let { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, bio, avatar_url')
-        .eq('id', userId)
+        .select('*')
+        .or(`email.eq.${user.email},wallet_address.eq.${user.wallet}`)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-        setFetchError('Failed to load profile data. Please try again later.');
+      if (fetchError) {
+        console.error('Error fetching profile:', fetchError);
+        toast.error('Failed to load profile data');
         return;
       }
-      
-      if (data) {
-        console.log('Profile data retrieved:', data);
+
+      if (existingProfile) {
+        console.log('Found existing profile:', existingProfile);
         setProfileData({
-          id: data.id,
-          first_name: data.first_name || '',
-          last_name: data.last_name || '',
-          bio: data.bio || '',
-          avatar_url: data.avatar_url || '',
+          id: existingProfile.id,
+          first_name: existingProfile.first_name || '',
+          last_name: existingProfile.last_name || '',
+          bio: existingProfile.bio || '',
+          avatar_url: existingProfile.avatar_url || '',
+          email: existingProfile.email || user.email || '',
+          wallet_address: existingProfile.wallet_address || user.wallet || '',
         });
       } else {
-        console.log("No profile found for user ID:", userId);
-        // Profile doesn't exist, create a new one
-        const { error: insertError } = await supabase
+        console.log('No existing profile found, creating new one');
+        // Create a new profile
+        const newProfileData = {
+          email: user.email || null,
+          wallet_address: user.wallet || null,
+          first_name: null,
+          last_name: null,
+          bio: null,
+          avatar_url: null,
+        };
+
+        const { data: newProfile, error: createError } = await supabase
           .from('profiles')
-          .insert({ id: userId })
-          .select();
-          
-        if (insertError) {
-          console.error('Error creating new profile:', insertError);
-          setFetchError('Failed to create a profile. Please try again.');
+          .insert(newProfileData)
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          toast.error('Failed to create profile');
           return;
         }
-        
+
+        console.log('Created new profile:', newProfile);
         setProfileData({
-          id: userId,
+          id: newProfile.id,
           first_name: '',
           last_name: '',
           bio: '',
           avatar_url: '',
+          email: user.email || '',
+          wallet_address: user.wallet || '',
         });
       }
     } catch (error) {
-      console.error('Unexpected error during profile fetch:', error);
-      setFetchError('An unexpected error occurred. Please try again.');
+      console.error('Unexpected error during profile fetch/create:', error);
+      toast.error('An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSave = async () => {
-    if (!isAuthenticated || !profileData.id) {
-      toast.error('Not authenticated', { 
-        description: 'Please log in to save your profile'
-      });
+    if (!profileData.id) {
+      toast.error('No profile ID found');
       return;
     }
 
@@ -148,14 +155,14 @@ const ProfilePage = () => {
           last_name: profileData.last_name,
           bio: profileData.bio,
           avatar_url: profileData.avatar_url,
+          email: profileData.email,
+          wallet_address: profileData.wallet_address,
         })
         .eq('id', profileData.id);
 
       if (error) {
         console.error('Error updating profile:', error);
-        toast.error('Failed to update profile', {
-          description: error.message
-        });
+        toast.error('Failed to update profile');
         return;
       }
 
@@ -163,9 +170,7 @@ const ProfilePage = () => {
       setIsEditing(false);
     } catch (error) {
       console.error('Error in save operation:', error);
-      toast.error('Failed to update profile', {
-        description: 'An unexpected error occurred'
-      });
+      toast.error('Failed to update profile');
     } finally {
       setIsSaving(false);
     }
@@ -174,7 +179,7 @@ const ProfilePage = () => {
   const getInitials = () => {
     const first = profileData.first_name?.charAt(0) || '';
     const last = profileData.last_name?.charAt(0) || '';
-    return (first + last).toUpperCase() || 'U';
+    return (first + last).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
   };
 
   if (isLoading) {
@@ -182,24 +187,6 @@ const ProfilePage = () => {
       <PageContainer>
         <div className="flex items-center justify-center min-h-screen">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </PageContainer>
-    );
-  }
-  
-  if (fetchError) {
-    return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-          <div className="text-xl text-red-500 font-medium">{fetchError}</div>
-          <Button 
-            onClick={() => fetchProfileData()} 
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <RefreshCcw className="h-4 w-4" />
-            Retry
-          </Button>
         </div>
       </PageContainer>
     );
@@ -220,7 +207,7 @@ const ProfilePage = () => {
             <div>
               <h1 className="text-3xl font-bold gradient-text">
                 {profileData.first_name || profileData.last_name 
-                  ? `${profileData.first_name || ''} ${profileData.last_name || ''}` 
+                  ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim()
                   : 'Your Profile'}
               </h1>
               <p className="text-muted-foreground mt-1">
@@ -290,6 +277,28 @@ const ProfilePage = () => {
                       disabled={!isEditing}
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    value={profileData.email || ''}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                    disabled={!isEditing}
+                    type="email"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="walletAddress">Wallet Address</Label>
+                  <Input
+                    id="walletAddress"
+                    value={profileData.wallet_address || ''}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, wallet_address: e.target.value }))}
+                    disabled={!isEditing}
+                    className="font-mono text-sm"
+                  />
                 </div>
 
                 <div className="space-y-2">
