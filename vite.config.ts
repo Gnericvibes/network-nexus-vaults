@@ -30,7 +30,8 @@ export default defineConfig(({ command }) => ({
       '@ethersproject/bytes',
       '@ethersproject/providers',
       '@ethersproject/keccak256',
-      'js-sha3'
+      'js-sha3',
+      'eventemitter3'
     ],
     esbuildOptions: {
       define: {
@@ -40,11 +41,11 @@ export default defineConfig(({ command }) => ({
   },
   build: {
     commonjsOptions: {
-      include: [/bn\.js/, /@ethersproject/, /js-sha3/, /node_modules/],
+      include: [/bn\.js/, /@ethersproject/, /js-sha3/, /eventemitter3/, /node_modules/],
       transformMixedEsModules: true,
       defaultIsModuleExports: (id) => {
-        // Force bn.js and js-sha3 to be treated as having default exports
-        if (id.includes('bn.js') || id.includes('js-sha3')) {
+        // Force bn.js, js-sha3, and eventemitter3 to be treated as having default exports
+        if (id.includes('bn.js') || id.includes('js-sha3') || id.includes('eventemitter3')) {
           return true;
         }
         // Let other modules use their natural export style
