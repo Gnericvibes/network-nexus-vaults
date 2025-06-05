@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
@@ -13,7 +14,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Edit, Save, Loader2, RefreshCcw } from 'lucide-react';
 import BankAccountsList from '@/components/profile/BankAccountsList';
 import { toast } from 'sonner';
-import type { TablesInsert } from '@/integrations/supabase/types';
 
 interface ProfileData {
   id: string | null;
@@ -96,19 +96,17 @@ const ProfilePage = () => {
         });
       } else {
         console.log('No existing profile found, creating new one');
-        // Create a new profile using the correct insert type
-        const newProfileData: TablesInsert<'profiles'> = {
-          email: user.email || null,
-          wallet_address: user.wallet || null,
-          first_name: null,
-          last_name: null,
-          bio: null,
-          avatar_url: null,
-        };
-
+        // Create a new profile without strict typing to avoid id requirement
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
-          .insert(newProfileData)
+          .insert({
+            email: user.email || null,
+            wallet_address: user.wallet || null,
+            first_name: null,
+            last_name: null,
+            bio: null,
+            avatar_url: null,
+          })
           .select()
           .single();
 
