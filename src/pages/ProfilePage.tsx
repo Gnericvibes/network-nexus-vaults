@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Edit, Save, Loader2, RefreshCcw } from 'lucide-react';
 import BankAccountsList from '@/components/profile/BankAccountsList';
 import { toast } from 'sonner';
+import type { TablesInsert } from '@/integrations/supabase/types';
 
 interface ProfileData {
   id: string | null;
@@ -95,8 +96,8 @@ const ProfilePage = () => {
         });
       } else {
         console.log('No existing profile found, creating new one');
-        // Create a new profile - remove the id field to let Supabase auto-generate it
-        const newProfileData = {
+        // Create a new profile using the correct insert type
+        const newProfileData: TablesInsert<'profiles'> = {
           email: user.email || null,
           wallet_address: user.wallet || null,
           first_name: null,
