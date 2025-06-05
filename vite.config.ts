@@ -31,7 +31,8 @@ export default defineConfig(({ command }) => ({
       '@ethersproject/providers',
       '@ethersproject/keccak256',
       'js-sha3',
-      'eventemitter3'
+      'eventemitter3',
+      '@walletconnect/time'
     ],
     esbuildOptions: {
       define: {
@@ -41,14 +42,13 @@ export default defineConfig(({ command }) => ({
   },
   build: {
     commonjsOptions: {
-      include: [/bn\.js/, /@ethersproject/, /js-sha3/, /eventemitter3/, /node_modules/],
+      include: [/bn\.js/, /@ethersproject/, /js-sha3/, /eventemitter3/, /@walletconnect/, /node_modules/],
       transformMixedEsModules: true,
       defaultIsModuleExports: (id) => {
-        // Force bn.js, js-sha3, and eventemitter3 to be treated as having default exports
-        if (id.includes('bn.js') || id.includes('js-sha3') || id.includes('eventemitter3')) {
+        // Force these packages to be treated as having default exports
+        if (id.includes('bn.js') || id.includes('js-sha3') || id.includes('eventemitter3') || id.includes('@walletconnect')) {
           return true;
         }
-        // Let other modules use their natural export style
         return 'auto';
       },
     },
@@ -56,6 +56,7 @@ export default defineConfig(({ command }) => ({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
+          walletconnect: ['@walletconnect/time'],
         },
       },
     },
