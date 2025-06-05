@@ -28,7 +28,9 @@ export default defineConfig(({ command }) => ({
       'bn.js',
       '@ethersproject/bignumber',
       '@ethersproject/bytes',
-      '@ethersproject/providers'
+      '@ethersproject/providers',
+      '@ethersproject/keccak256',
+      'js-sha3'
     ],
     esbuildOptions: {
       define: {
@@ -38,11 +40,11 @@ export default defineConfig(({ command }) => ({
   },
   build: {
     commonjsOptions: {
-      include: [/bn\.js/, /@ethersproject/, /node_modules/],
+      include: [/bn\.js/, /@ethersproject/, /js-sha3/, /node_modules/],
       transformMixedEsModules: true,
       defaultIsModuleExports: (id) => {
-        // Force bn.js to be treated as having default exports
-        if (id.includes('bn.js')) {
+        // Force bn.js and js-sha3 to be treated as having default exports
+        if (id.includes('bn.js') || id.includes('js-sha3')) {
           return true;
         }
         // Let other modules use their natural export style
@@ -53,7 +55,6 @@ export default defineConfig(({ command }) => ({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          crypto: ['bn.js']
         },
       },
     },

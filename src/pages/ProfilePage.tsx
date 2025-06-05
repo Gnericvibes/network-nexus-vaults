@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
@@ -96,7 +95,7 @@ const ProfilePage = () => {
         });
       } else {
         console.log('No existing profile found, creating new one');
-        // Create a new profile
+        // Create a new profile - remove the id field to let Supabase auto-generate it
         const newProfileData = {
           email: user.email || null,
           wallet_address: user.wallet || null,
