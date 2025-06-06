@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePrivyAuth } from '@/contexts/PrivyAuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { TablesInsert } from '@/integrations/supabase/types';
 import PageContainer from '@/components/layout/PageContainer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -95,17 +96,19 @@ const ProfilePage = () => {
         });
       } else {
         console.log('No existing profile found, creating new one');
-        // Create a new profile without the id field - Supabase will auto-generate it
+        // Create a new profile using the correct insert type without id field
+        const insertData: TablesInsert<'profiles'> = {
+          email: user.email || null,
+          wallet_address: user.wallet || null,
+          first_name: null,
+          last_name: null,
+          bio: null,
+          avatar_url: null,
+        };
+
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
-          .insert({
-            email: user.email || null,
-            wallet_address: user.wallet || null,
-            first_name: null,
-            last_name: null,
-            bio: null,
-            avatar_url: null,
-          })
+          .insert(insertData)
           .select()
           .single();
 

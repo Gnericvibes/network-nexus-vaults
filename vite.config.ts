@@ -21,6 +21,7 @@ export default defineConfig(({ command }) => ({
   },
   define: {
     global: 'globalThis',
+    'process.env': {},
   },
   optimizeDeps: {
     exclude: ['@privy-io/react-auth'],
@@ -32,7 +33,6 @@ export default defineConfig(({ command }) => ({
       '@ethersproject/keccak256',
       'js-sha3',
       'eventemitter3',
-      '@walletconnect/time'
     ],
     esbuildOptions: {
       define: {
@@ -42,21 +42,14 @@ export default defineConfig(({ command }) => ({
   },
   build: {
     commonjsOptions: {
-      include: [/bn\.js/, /@ethersproject/, /js-sha3/, /eventemitter3/, /@walletconnect/, /node_modules/],
+      include: [/bn\.js/, /@ethersproject/, /js-sha3/, /eventemitter3/, /node_modules/],
       transformMixedEsModules: true,
-      defaultIsModuleExports: (id) => {
-        // Force these packages to be treated as having default exports
-        if (id.includes('bn.js') || id.includes('js-sha3') || id.includes('eventemitter3') || id.includes('@walletconnect')) {
-          return true;
-        }
-        return 'auto';
-      },
     },
     rollupOptions: {
+      external: ['@walletconnect/time', '@walletconnect/window-getters'],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          walletconnect: ['@walletconnect/time'],
         },
       },
     },
