@@ -46,11 +46,20 @@ export default defineConfig(({ command }) => ({
       transformMixedEsModules: true,
     },
     rollupOptions: {
-      external: ['@walletconnect/time', '@walletconnect/window-getters'],
+      external: [
+        '@walletconnect/time', 
+        '@walletconnect/window-getters',
+        '@walletconnect/relay-auth'
+      ],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
         },
+        globals: {
+          '@walletconnect/time': 'WalletConnectTime',
+          '@walletconnect/window-getters': 'WalletConnectWindowGetters',
+          '@walletconnect/relay-auth': 'WalletConnectRelayAuth'
+        }
       },
     },
   },
