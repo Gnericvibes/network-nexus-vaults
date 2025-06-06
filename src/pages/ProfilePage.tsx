@@ -95,7 +95,7 @@ const ProfilePage = () => {
         });
       } else {
         console.log('No existing profile found, creating new one');
-        // Create a new profile - Supabase will auto-generate the id
+        // Create a new profile - explicitly cast to avoid TypeScript issues with auto-generated fields
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert({
@@ -105,7 +105,7 @@ const ProfilePage = () => {
             last_name: null,
             bio: null,
             avatar_url: null,
-          })
+          } as any) // Cast to any to bypass the id requirement for auto-generated fields
           .select()
           .single();
 

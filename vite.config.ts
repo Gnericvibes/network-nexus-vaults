@@ -24,7 +24,12 @@ export default defineConfig(({ command }) => ({
     'process.env': {},
   },
   optimizeDeps: {
-    exclude: ['@privy-io/react-auth'],
+    exclude: [
+      '@privy-io/react-auth',
+      '@walletconnect/time',
+      '@walletconnect/window-getters',
+      '@walletconnect/relay-auth',
+    ],
     include: [
       'bn.js',
       '@ethersproject/bignumber',
@@ -42,24 +47,27 @@ export default defineConfig(({ command }) => ({
   },
   build: {
     commonjsOptions: {
-      include: [/bn\.js/, /@ethersproject/, /js-sha3/, /eventemitter3/, /node_modules/],
+      include: [
+        /bn\.js/, 
+        /@ethersproject/, 
+        /js-sha3/, 
+        /eventemitter3/, 
+        /@walletconnect/, 
+        /node_modules/
+      ],
       transformMixedEsModules: true,
     },
     rollupOptions: {
-      external: [
-        '@walletconnect/time', 
-        '@walletconnect/window-getters',
-        '@walletconnect/relay-auth'
-      ],
+      external: [],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
+          walletconnect: [
+            '@walletconnect/time',
+            '@walletconnect/window-getters', 
+            '@walletconnect/relay-auth'
+          ],
         },
-        globals: {
-          '@walletconnect/time': 'WalletConnectTime',
-          '@walletconnect/window-getters': 'WalletConnectWindowGetters',
-          '@walletconnect/relay-auth': 'WalletConnectRelayAuth'
-        }
       },
     },
   },
